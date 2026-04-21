@@ -16,6 +16,7 @@ class AttendanceRecordResponse(BaseModel):
     location: Optional[str]
     hours_worked: Optional[str]
     overtime_hours: str
+    record_source: str = "manual"
     created_at: datetime
     
     class Config:

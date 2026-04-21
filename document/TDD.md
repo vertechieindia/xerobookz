@@ -136,6 +136,8 @@ This document describes the technical architecture, components, data flows, and 
 
 - **Auth-service:** tenants (including optional `code` for tenant-code login), users, roles, permissions, tenant_users, user_roles.
 - **Employee-service:** employees, invitations, etc.
+- **Attendance-service:** `tenant_attendance_settings` (e.g. `enable_realtime_attendance`), `attendance_events` (event_type: PUNCH_IN, PUNCH_OUT, BREAK_IN, BREAK_OUT; `timestamp_utc`, `timestamp_local`, `timezone`, `ip_address`, geo fields, `source`), `attendance_audit_logs` for compliance; indexes on `(tenant_id, employee_id)` and `(tenant_id, timestamp_utc)`.
+- **Timesheet-service:** `attendance_records.record_source` distinguishes **manual** vs **attendance** (auto-filled from closed punch sessions).
 - **I-9 / E-Verify / Immigration / LCA / PAF:** Each service owns its schema; tenant_id on all tenant-scoped tables.
 - **Promo-service:** promo_codes, promo_code_usage.
 - **Contract-service:** contracts, contract_parties, contract_signatures (MSA, NDA, PO, WO, SOW).
@@ -166,6 +168,13 @@ This document describes the technical architecture, components, data flows, and 
 - **Shared libraries:** Common code (DB, auth middleware, JWT, schemas, events) in `shared-libs`; installed in each service image.
 - **Configuration:** Environment variables (e.g. POSTGRES_URI, REDIS_URI, JWT_SECRET, RABBITMQ_URI); no hardcoded secrets.
 - **Health:** Each service exposes `/health` for readiness/liveness.
+
+### 7.1 Real-time attendance API flow
+
+1. **Gateway:** `SERVICE_ROUTES["attendance"]` → `http://attendance-service:8032`; paths such as `POST /api/v1/attendance/punch`, `GET /api/v1/attendance/my-events`, `GET /api/v1/attendance/company`, `GET /api/v1/attendance/session-summary`, `GET/PATCH /api/v1/attendance/settings`.
+2. **Auth:** JWT + `X-Tenant-ID`; employees may only punch for their own `employee_id` (email match via employee-service); admin/HR may view company feed and toggle tenant setting.
+3. **State machine:** Server validates transitions; sessions partition on each `PUNCH_OUT`.
+4. **Timesheet sync:** On `PUNCH_OUT`, service may `POST` to timesheet-service `.../timesheet/attendance/realtime-close` to upsert a row with `record_source = attendance`.
 
 ---
 

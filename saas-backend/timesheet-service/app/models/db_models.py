@@ -35,6 +35,8 @@ class AttendanceRecord(BaseModel):
     location = Column(String(255), nullable=True)
     hours_worked = Column(String(10), nullable=True)
     overtime_hours = Column(String(10), default="0")
+    # manual | attendance — coexists with real-time punch sessions
+    record_source = Column(String(32), nullable=False, default="manual")
 
 
 class Schedule(BaseModel):

@@ -344,6 +344,24 @@ services:
     networks:
       - xerobookz-network
 
+  # Real-time attendance (punch in/out, breaks, geo + IP)
+  attendance-service:
+    build:
+      context: ../../saas-backend/attendance-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-attendance-service
+    environment:
+      SERVICE_NAME: attendance-service
+      POSTGRES_URI: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz
+      JWT_SECRET: dev-secret-key-change-in-production
+      TENANT_HEADER: X-Tenant-ID
+      EMPLOYEE_SERVICE_URL: http://employee-service:8004
+      TIMESHEET_SERVICE_URL: http://timesheet-service:8013
+    depends_on:
+      - postgres
+    networks:
+      - xerobookz-network
+
   # Leave Service
   leave-service:
     build:

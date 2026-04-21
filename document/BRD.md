@@ -213,6 +213,7 @@ All capabilities are delivered with tenant isolation, role-based access, auditab
 ### 5.6 Human Resources
 
 - BR-31: Provide employee management (profiles, skills, documents, org chart, attendance).
+- BR-61: Provide optional **real-time attendance** per tenant (punch in/out, break in/out), capturing UTC and local timestamps, client IP, optional geolocation (latitude, longitude, address), enforcing valid transitions, tenant-isolated storage and audit, ESS punch experience and HR visibility, and optional **timesheet auto-fill** when a session closes (distinct from manual timesheet entry).
 - BR-32: Provide recruitment (job postings, applications, pipeline, interviews, candidates).
 - BR-33: Provide time off management (leave requests, PTO, accrual plans, approvals, calendar).
 - BR-34: Provide performance appraisals (reviews, 360 feedback, goal setting).

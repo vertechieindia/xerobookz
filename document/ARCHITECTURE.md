@@ -11,8 +11,8 @@
 | Metric | Count |
 |--------|--------|
 | **Modules** | 10 |
-| **Product services** | 53 |
-| **Backend microservices** | 31 |
+| **Product services** | 54 |
+| **Backend microservices** | 32 |
 | **Data stores** | 3 (PostgreSQL, MongoDB, Redis) |
 | **Message broker** | 1 (RabbitMQ) |
 
@@ -62,7 +62,8 @@ XeroBookz is a **multi-tenant, microservices-based SaaS platform** that delivers
 │  promo-service:8027 │         │  onboarding :8018   │         │  lca :8012         │
 │  super-admin :8026  │         │  workflow :8019     │         │  paf :8009         │
 │                     │         │  timesheet :8013    │         │  soc-predictor:8010 │
-│                     │         │  leave :8014       │         │  safety :8017       │
+│                     │         │  attendance :8032   │         │  safety :8017       │
+│                     │         │  leave :8014       │         │                     │
 └──────────┬──────────┘         └──────────┬──────────┘         └──────────┬──────────┘
            │                               │                               │
            │         ┌─────────────────────┼─────────────────────┐       │
@@ -127,6 +128,7 @@ XeroBookz is a **multi-tenant, microservices-based SaaS platform** that delivers
 | **oauth-service** | 8029 | OAuth 2.0 provider flows |
 | **saml-service** | 8030 | SAML 2.0 SSO |
 | **contract-service** | 8031 | Contracts (MSA, NDA, PO, WO, SOW): create, send, sign, AI quick-read |
+| **attendance-service** | 8032 | Real-time punch/break events, geo/IP, session summaries, tenant toggle; integrates with timesheets |
 
 **Planned / future service groups (same patterns):** Website (builder, blog, forum, eLearning, live chat), Sales (CRM, sales orders, POS, subscriptions, rental), Finance expansion (accounting, bookkeeping, expenses, spreadsheets), Inventory & Manufacturing, Marketing (automation, email, SMS, social, events, surveys), Services (projects, field service, helpdesk, planning, appointments), Productivity (chat, approvals, IoT, VoIP, knowledge base), Customization (Studio no-code). See BRD and APPLICATION-BUSINESS-FEATURES for full scope.
 
@@ -136,7 +138,7 @@ XeroBookz is a **multi-tenant, microservices-based SaaS platform** that delivers
 
 1. **Client** sends request to `https://api.example.com/api/v1/auth/login` (or `/api/v1/employees`, etc.).
 2. **API Gateway** receives request; if path is public (e.g. login, signup), skips JWT; else validates JWT and extracts tenant_id and user.
-3. **Gateway** applies rate limit (Redis); forwards request to target service (e.g. auth-service:8001) with same path and headers.
+3. **Gateway** applies rate limit (Redis); forwards request to target service (e.g. auth-service:8001, attendance-service:8032) with same path and headers. Paths follow `/api/v1/<service>/...` (e.g. `/api/v1/attendance/punch`).
 4. **Target service** uses tenant_id and user from context; executes business logic; reads/writes DB; may publish events to RabbitMQ.
 5. **Response** returned through gateway to client.
 

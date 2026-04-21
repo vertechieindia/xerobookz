@@ -342,7 +342,7 @@ This document lists **each and every** business feature of the XeroBookz platfor
 | 29.2 | Skills management | Skills and competencies | 🔲 |
 | 29.3 | Document management | Employee documents and storage | ✅ |
 | 29.4 | Organizational chart | Org chart and reporting structure | 🔲 |
-| 29.5 | Attendance tracking | Attendance and time tracking | 🔲 |
+| 29.5 | Attendance tracking | Real-time punch in/out and break in/out (optional per tenant), UTC + local timestamps, IP and geo capture, state-machine validation, audit trail, ESS + HR dashboards; coexists with timesheets and optional auto-fill into timesheet rows (`record_source` manual or attendance) | ✅ |
 | 29.6 | Employee list and filters | List employees with search/filter | ✅ |
 | 29.7 | Employee invitation | Invite by email; complete signup/onboarding | ✅ |
 | 29.8 | Bulk import | Import employees from CSV | 🔲 |

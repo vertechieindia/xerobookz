@@ -66,6 +66,45 @@ class TimesheetRepository:
         if employee_id:
             query = query.filter(AttendanceRecord.employee_id == employee_id)
         return query.order_by(AttendanceRecord.clock_in.desc()).all()
+
+    def upsert_realtime_attendance_record(
+        self,
+        tenant_id: UUID,
+        employee_id: UUID,
+        clock_in: datetime,
+        clock_out: datetime,
+        hours_worked: str,
+        record_source: str,
+    ) -> AttendanceRecord:
+        """Idempotent upsert for a closed punch session (same clock_in instant)."""
+        existing = (
+            self.db.query(AttendanceRecord)
+            .filter(
+                AttendanceRecord.tenant_id == tenant_id,
+                AttendanceRecord.employee_id == employee_id,
+                AttendanceRecord.clock_in == clock_in,
+            )
+            .first()
+        )
+        if existing:
+            existing.clock_out = clock_out
+            existing.hours_worked = hours_worked
+            existing.record_source = record_source
+            self.db.commit()
+            self.db.refresh(existing)
+            return existing
+        record = AttendanceRecord(
+            tenant_id=tenant_id,
+            employee_id=employee_id,
+            clock_in=clock_in,
+            clock_out=clock_out,
+            hours_worked=hours_worked,
+            record_source=record_source,
+        )
+        self.db.add(record)
+        self.db.commit()
+        self.db.refresh(record)
+        return record
     
     def create_schedule(self, data: ScheduleCreate, tenant_id: UUID) -> Schedule:
         """Create schedule"""

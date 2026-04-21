@@ -47,6 +47,7 @@ SERVICE_ROUTES = {
     "oauth": "http://oauth-service:8029",
     "saml": "http://saml-service:8030",
     "contracts": "http://contract-service:8031",
+    "attendance": "http://attendance-service:8032",
 }
 
 

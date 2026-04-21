@@ -7,6 +7,7 @@ export * from "./types";
 export * from "./auth";
 export * from "./employee";
 export * from "./timesheet";
+export * from "./attendance";
 export * from "./marketing";
 
 // New NestJS services

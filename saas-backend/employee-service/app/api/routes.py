@@ -8,8 +8,8 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../shared-libs"))
 from shared_libs.schemas.response import APIResponse
-from shared_libs.auth.middleware import get_tenant_id
-from shared_libs.database.postgres import get_db_session
+from shared_libs.auth.middleware import get_tenant_id, get_current_user
+from shared_libs.database.postgres import get_db_session, get_db_session_dependency
 
 from ..schemas.request import (
     EmployeeCreate, EmployeeUpdate,
@@ -56,6 +56,26 @@ async def get_employees(
     service = EmployeeService(db)
     employees = await service.get_employees(tenant_id)
     return APIResponse.success_response(data=employees)
+
+
+@router.get("/me", response_model=APIResponse[EmployeeResponse])
+async def get_my_employee_record(
+    request: Request,
+    db: Session = Depends(get_db_session_dependency),
+):
+    """Employee profile for the authenticated user (matched by email)."""
+    tenant_id = get_tenant_id(request)
+    user = get_current_user(request)
+    if not user:
+        return APIResponse.error_response("UNAUTHORIZED", "Authentication required")
+    email = (user.get("email") or user.get("preferred_username") or "").strip()
+    if not email:
+        return APIResponse.error_response("BAD_REQUEST", "Token has no email claim")
+    service = EmployeeService(db)
+    employee = await service.get_employee_by_email(tenant_id, email)
+    if not employee:
+        return APIResponse.error_response("NOT_FOUND", "No employee profile linked to this account")
+    return APIResponse.success_response(data=employee)
 
 
 @router.get("/{id}", response_model=APIResponse[EmployeeResponse])

@@ -76,6 +76,17 @@ class EmployeeService:
         if not employee:
             return None
         return EmployeeResponse.model_validate(employee)
+
+    async def get_employee_by_email(
+        self,
+        tenant_id: UUID,
+        email: str,
+    ) -> EmployeeResponse | None:
+        """Get employee by work email (ESS / attendance linking)."""
+        employee = self.repo.get_employee_by_email(tenant_id, email)
+        if not employee:
+            return None
+        return EmployeeResponse.model_validate(employee)
     
     async def update_employee(
         self,

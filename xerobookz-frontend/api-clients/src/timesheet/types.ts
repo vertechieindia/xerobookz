@@ -21,6 +21,8 @@ export interface AttendanceRecord {
   location?: string;
   hours_worked?: string;
   overtime_hours: string;
+  /** manual | attendance */
+  record_source?: string;
   created_at: string;
 }
 

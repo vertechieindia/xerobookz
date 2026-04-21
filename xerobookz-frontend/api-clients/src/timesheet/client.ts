@@ -17,29 +17,29 @@ export const timesheetApi = {
 
   // ========== ENTERPRISE: TIME & ATTENDANCE ==========
   clockIn: async (data: AttendanceClockInRequest): Promise<APIResponse<AttendanceRecord>> => {
-    return apiClient.post("/timesheet/attendance/clock-in", data);
+    return apiClient.post("/api/v1/timesheets/timesheet/attendance/clock-in", data);
   },
 
   clockOut: async (data: AttendanceClockOutRequest): Promise<APIResponse<AttendanceRecord>> => {
-    return apiClient.post("/timesheet/attendance/clock-out", data);
+    return apiClient.post("/api/v1/timesheets/timesheet/attendance/clock-out", data);
   },
 
   getAttendanceRecords: async (employeeId?: string): Promise<APIResponse<AttendanceRecord[]>> => {
     const params = employeeId ? `?employee_id=${employeeId}` : "";
-    return apiClient.get(`/timesheet/attendance/records${params}`);
+    return apiClient.get(`/api/v1/timesheets/timesheet/attendance/records${params}`);
   },
 
   createSchedule: async (data: ScheduleCreate): Promise<APIResponse<Schedule>> => {
-    return apiClient.post("/timesheet/schedules", data);
+    return apiClient.post("/api/v1/timesheets/timesheet/schedules", data);
   },
 
   getSchedules: async (employeeId?: string): Promise<APIResponse<Schedule[]>> => {
     const params = employeeId ? `?employee_id=${employeeId}` : "";
-    return apiClient.get(`/timesheet/schedules${params}`);
+    return apiClient.get(`/api/v1/timesheets/timesheet/schedules${params}`);
   },
 
   createShift: async (data: ShiftCreate): Promise<APIResponse<Shift>> => {
-    return apiClient.post("/timesheet/shifts", data);
+    return apiClient.post("/api/v1/timesheets/timesheet/shifts", data);
   },
 };
 

@@ -16,6 +16,7 @@ export default function ESSDashboard() {
     { label: "Dashboard", href: "/dashboard" },
     { label: "Documents", href: "/documents" },
     { label: "Timesheets", href: "/timesheets" },
+    { label: "Attendance", href: "/attendance" },
   ];
 
   return (

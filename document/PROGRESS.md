@@ -76,6 +76,20 @@
 | RUN-LOCAL | How to run API + frontend |
 | **PROGRESS.md** (this file) | Implementation snapshot & manual QA focus |
 
+### 1.8 Real-time attendance tracking
+
+| Item | Location / notes |
+|------|------------------|
+| **attendance-service** (FastAPI, :8032) | `saas-backend/attendance-service/` — punch API, state machine, session summaries, tenant toggle, audit table |
+| **Gateway route** | `attendance` → `http://attendance-service:8032` in `api-gateway/app/main.py` |
+| **Docker Compose (full stack)** | `attendance-service` service in `xerobookz-infrastructure/docker-compose/docker-compose.yml` |
+| **Timesheet coexistence** | `timesheet-service`: `record_source` on `attendance_records`, `POST .../timesheet/attendance/realtime-close` |
+| **Employee linking (ESS)** | `GET /api/v1/employees/me` — `employee-service` resolves logged-in user email to employee row |
+| **Frontend** | `@xerobookz/api-clients` attendance + updated employee/timesheet paths; **ESS** `ess-web/app/attendance/page.tsx`; **employer** `employer-web/app/attendance/dashboard/page.tsx` |
+| **Tests** | `saas-backend/attendance-service/tests/test_state_machine.py` (pytest) |
+
+**Note:** `docker-compose.local.yml` (used by `./start-api.sh`) still runs a **minimal** API subset; run the **full** `docker-compose.yml` (or add services) to exercise attendance end-to-end with gateway + employee + timesheet.
+
 ---
 
 ## 2. What is pending (summary)
@@ -138,6 +152,14 @@ Run manual tests **after** Docker is up, `./start-api.sh` succeeds, and the fron
 ### 3.8 Regression
 
 - [ ] No public marketing link advertises the platform-operator / “super admin” portal (internal entry only).
+
+### 3.9 Real-time attendance (full stack)
+
+- [ ] Tenant has `enable_realtime_attendance` on (via `PATCH /api/v1/attendance/settings` as admin) or seed settings row.
+- [ ] **ESS:** Open **Attendance**; punch in → break in → break out → punch out; confirm events appear and invalid sequence returns 400.
+- [ ] **HR dashboard:** Employer **Attendance** shows events with IP/geo columns when present.
+- [ ] **Multi-tenant:** Two tenants’ events do not mix (different `X-Tenant-ID` / JWT).
+- [ ] **Timesheet row:** After punch out, optional timesheet row exists with `record_source` attendance (if timesheet-service reachable).
 
 ---
 

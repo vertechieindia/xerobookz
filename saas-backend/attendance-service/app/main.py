@@ -1,40 +1,40 @@
-"""Main FastAPI application for timesheet-service"""
+"""Attendance service — real-time punch in/out with geo + IP."""
+
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import sys
 import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../shared-libs"))
-from sqlalchemy import text
 from shared_libs.auth.middleware import get_tenant_id
 from shared_libs.database.postgres import engine, Base
+
 from .config import settings
+from .models import db_models  # noqa: F401 — register models
 from .api.routes import router
-from .models import db_models  # noqa: F401
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    with engine.connect() as conn:
-        conn.execute(
-            text(
-                "ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS record_source VARCHAR(32) NOT NULL DEFAULT 'manual'"
-            )
-        )
-        conn.commit()
     yield
 
 
 app = FastAPI(
-    title="XeroBookz Timesheet Management Service",
+    title="XeroBookz Attendance Service",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.middleware("http")
@@ -53,8 +53,10 @@ async def health_check():
     return {"status": "healthy", "service": settings.SERVICE_NAME}
 
 
-app.include_router(router, prefix="/api/v1/timesheets")
+app.include_router(router, prefix="/api/v1/attendance")
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8013)
+
+    uvicorn.run(app, host="0.0.0.0", port=settings.SERVICE_PORT)

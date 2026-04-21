@@ -42,7 +42,7 @@ async def health_check():
     return {"status": "healthy", "service": settings.SERVICE_NAME}
 
 
-app.include_router(router)
+app.include_router(router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn

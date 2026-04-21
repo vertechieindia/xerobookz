@@ -2,6 +2,7 @@
 
 from sqlalchemy.orm import Session
 from uuid import UUID
+from datetime import datetime, timezone
 import sys
 import os
 
@@ -9,10 +10,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../shared-libs
 from shared_libs.models.enums import EventType
 from shared_libs.schemas.events import EventEnvelope
 
-from ..schemas.request import AttendanceClockInRequest, ScheduleCreate, ShiftCreate
+from ..schemas.request import AttendanceClockInRequest, ScheduleCreate, ShiftCreate, RealtimeCloseRequest
 from ..schemas.response import AttendanceRecordResponse, ScheduleResponse, ShiftResponse
 from ..repositories.repo import TimesheetRepository
 from ..events.producers import EventProducer
+
+
+def _parse_iso_datetime(value: str) -> datetime:
+    s = value.strip().replace("Z", "+00:00")
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 class TimesheetService:
@@ -67,6 +76,25 @@ class TimesheetService:
         """Get attendance records"""
         records = self.repo.get_attendance_records(tenant_id, employee_id)
         return [AttendanceRecordResponse.model_validate(r) for r in records]
+
+    async def record_realtime_session(
+        self,
+        data: RealtimeCloseRequest,
+        tenant_id: UUID,
+    ) -> AttendanceRecordResponse:
+        """Create or update a timesheet row from a closed real-time attendance session."""
+        cin = _parse_iso_datetime(data.clock_in)
+        cout = _parse_iso_datetime(data.clock_out)
+        src = data.timesheet_source if data.timesheet_source in ("manual", "attendance") else "attendance"
+        record = self.repo.upsert_realtime_attendance_record(
+            tenant_id,
+            data.employee_id,
+            cin,
+            cout,
+            data.hours_worked,
+            src,
+        )
+        return AttendanceRecordResponse.model_validate(record)
     
     async def create_schedule(
         self,

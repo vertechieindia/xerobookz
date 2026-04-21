@@ -182,6 +182,18 @@ This document specifies the functional behavior of XeroBookz from an end-user an
 | F-TS-2 | Timesheet approval | Manager approval workflow | Pending list; approve/reject; status updated |
 | F-TS-3 | Timer & billable hours | Timer function; mark billable/non-billable | Time logged; billable flag; invoicing link if applicable |
 
+### 3.11a Real-time attendance (punch)
+
+| ID | Function | Description | Acceptance Criteria |
+|----|----------|-------------|---------------------|
+| F-ATT-0 | Tenant toggle | Admin enables or disables real-time attendance for the organization | `enable_realtime_attendance` stored per tenant; when off, only legacy timesheet flows apply |
+| F-ATT-1 | Punch flow | Employee submits PUNCH_IN, PUNCH_OUT, BREAK_IN, BREAK_OUT from web/mobile | Request includes event type, optional geo, browser timezone; server records UTC + local time, IP, source |
+| F-ATT-2 | Validation | Illegal sequences rejected | Cannot PUNCH_OUT before PUNCH_IN; cannot BREAK_OUT before BREAK_IN; cannot PUNCH_OUT while on break until BREAK_OUT; multiple breaks per session allowed |
+| F-ATT-3 | ESS UI | Punch buttons, current status (open session), last event | Uses `navigator.geolocation` when permitted; degrades gracefully if denied |
+| F-ATT-4 | HR / Admin | Company-wide event list with filters | Admin/HR see employees, timestamps, IP, geo; tenant isolation enforced |
+| F-ATT-5 | Session summary | Work seconds and break seconds per closed/open session | Derived server-side from ordered events |
+| F-ATT-6 | Timesheet integration | Optional row when session closes | Upsert timesheet attendance row with `record_source = attendance`; manual rows remain `manual` |
+
 ### 3.12 Marketing Module
 
 | ID | Function | Description | Acceptance Criteria |
@@ -236,6 +248,7 @@ This document specifies the functional behavior of XeroBookz from an end-user an
 | F-ESS-2 | My documents | View/download own documents | Only own documents; access logged |
 | F-ESS-3 | My leave | Submit leave; view balance and history | Request and history visible; balances correct |
 | F-ESS-4 | My timesheets | Enter and view own timesheets | Entry and status visible to employee |
+| F-ESS-5 | My attendance | Punch in/out and breaks when tenant enables real-time attendance | Status and last event visible; geo/IP captured per policy |
 | F-AI-1 | Document processing | Extract data or classify documents | Supports stated document types; results stored/linked |
 | F-AI-2 | Suggestions | Suggest fields, codes, or next actions (e.g. SOC, contract summary) | Suggestions shown in relevant UI; user can accept or ignore |
 

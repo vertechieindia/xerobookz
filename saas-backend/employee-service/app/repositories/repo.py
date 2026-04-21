@@ -1,7 +1,7 @@
 """Repository for employee-service - Extended for Enterprise HRIS"""
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 from uuid import UUID
 from typing import Optional, List
 
@@ -80,6 +80,20 @@ class EmployeeRepository:
                 Employee.tenant_id == tenant_id
             )
         ).first()
+
+    def get_employee_by_email(self, tenant_id: UUID, email: str) -> Optional[Employee]:
+        """Resolve employee row by email (case-insensitive) within tenant."""
+        email = (email or "").strip()
+        if not email:
+            return None
+        return (
+            self.db.query(Employee)
+            .filter(
+                Employee.tenant_id == tenant_id,
+                func.lower(Employee.email) == email.lower(),
+            )
+            .first()
+        )
     
     def update_employee(
         self,

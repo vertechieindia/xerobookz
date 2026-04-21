@@ -11,7 +11,13 @@ from shared_libs.schemas.response import APIResponse
 from shared_libs.auth.middleware import get_tenant_id
 from shared_libs.database.postgres import get_db_session
 
-from ..schemas.request import AttendanceClockInRequest, AttendanceClockOutRequest, ScheduleCreate, ShiftCreate
+from ..schemas.request import (
+    AttendanceClockInRequest,
+    AttendanceClockOutRequest,
+    RealtimeCloseRequest,
+    ScheduleCreate,
+    ShiftCreate,
+)
 from ..schemas.response import AttendanceRecordResponse, ScheduleResponse, ShiftResponse
 from ..services.business import TimesheetService
 
@@ -46,6 +52,19 @@ async def clock_out(
     if not record:
         return APIResponse.error_response("NOT_FOUND", "Attendance record not found")
     return APIResponse.success_response(data=record, message="Clocked out")
+
+
+@router.post("/attendance/realtime-close", response_model=APIResponse[AttendanceRecordResponse])
+async def attendance_realtime_close(
+    body: RealtimeCloseRequest,
+    request: Request,
+    db: Session = Depends(get_db_session),
+):
+    """Upsert timesheet row when a real-time punch session closes (optional auto-fill)."""
+    tenant_id = get_tenant_id(request)
+    service = TimesheetService(db)
+    record = await service.record_realtime_session(body, tenant_id)
+    return APIResponse.success_response(data=record, message="Timesheet updated from attendance")
 
 
 @router.get("/attendance/records", response_model=APIResponse[list[AttendanceRecordResponse]])

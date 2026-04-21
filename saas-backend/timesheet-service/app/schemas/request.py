@@ -18,6 +18,16 @@ class AttendanceClockOutRequest(BaseModel):
     attendance_record_id: UUID
 
 
+class RealtimeCloseRequest(BaseModel):
+    """Closed real-time attendance session → optional timesheet row (source = attendance)."""
+
+    employee_id: UUID
+    clock_in: str
+    clock_out: str
+    hours_worked: str
+    timesheet_source: str = "attendance"  # manual | attendance
+
+
 class ScheduleCreate(BaseModel):
     """Create schedule"""
     employee_id: UUID
