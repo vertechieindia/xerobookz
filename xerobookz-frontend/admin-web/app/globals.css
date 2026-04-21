@@ -154,6 +154,50 @@
     }
   }
 
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      max-height: 5000px;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .animate-slide-in-left {
     animation: slideInLeft 0.8s ease-out;
   }
@@ -264,5 +308,46 @@
   /* Smooth scroll */
   html {
     scroll-behavior: smooth;
+  }
+
+  /* Responsive image containers */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Prevent horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Better modal positioning */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  /* Responsive video containers */
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Better text wrapping */
+  .text-wrap-balance {
+    text-wrap: balance;
+  }
+
+  /* Mobile-first spacing utilities */
+  @media (max-width: 640px) {
+    .container-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
   }
 }

@@ -1,0 +1,174 @@
+// Project Management Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Project
+model Project {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  description   String?  @db.Text
+  projectType   String   @map("project_type") // project, task, template
+  status        String   @default("draft") // draft, in_progress, on_hold, completed, cancelled
+  priority      String   @default("normal") // low, normal, high, urgent
+  startDate     DateTime? @map("start_date")
+  endDate       DateTime? @map("end_date")
+  budget        Decimal?  @db.Decimal(12, 2)
+  currency      String?  @default("USD")
+  coverImage    String?  @map("cover_image")
+  tags          String[]
+  settings      Json?    // Project settings
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tasks         Task[]
+  milestones    Milestone[]
+  timesheets    Timesheet[]
+  documents     ProjectDocument[]
+  members       ProjectMember[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([priority])
+  @@map("projects")
+}
+
+// Task
+model Task {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  projectId     String   @map("project_id")
+  name          String
+  description   String?  @db.Text
+  stage         String   @default("todo") // todo, in_progress, done, cancelled
+  priority      String   @default("normal")
+  assignedToId  String?  @map("assigned_to_id")
+  parentTaskId String?  @map("parent_task_id")
+  startDate     DateTime? @map("start_date")
+  endDate       DateTime? @map("end_date")
+  plannedHours  Decimal?  @map("planned_hours") @db.Decimal(10, 2)
+  remainingHours Decimal? @map("remaining_hours") @db.Decimal(10, 2)
+  isRecurring   Boolean  @default(false) @map("is_recurring")
+  recurrenceRule Json?   @map("recurrence_rule")
+  tags          String[]
+  dependencies  Json?    // Task dependencies
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentTask    Task?    @relation("TaskHierarchy", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  subtasks      Task[]   @relation("TaskHierarchy")
+  timesheets    Timesheet[]
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([stage])
+  @@index([assignedToId])
+  @@index([parentTaskId])
+  @@map("tasks")
+}
+
+// Milestone
+model Milestone {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  projectId     String   @map("project_id")
+  name          String
+  description   String?  @db.Text
+  targetDate    DateTime @map("target_date")
+  achievedDate DateTime? @map("achieved_date")
+  status        String   @default("pending") // pending, achieved, missed
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([status])
+  @@map("milestones")
+}
+
+// Project Member
+model ProjectMember {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  projectId     String   @map("project_id")
+  userId        String   @map("user_id")
+  role          String   @default("member") // owner, manager, member, viewer
+  canEdit       Boolean  @default(false) @map("can_edit")
+  canView       Boolean  @default(true) @map("can_view")
+  joinedAt      DateTime @default(now()) @map("joined_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+// Project Document
+model ProjectDocument {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  projectId     String   @map("project_id")
+  name          String
+  fileUrl       String   @map("file_url")
+  fileSize      Int?     @map("file_size")
+  mimeType      String?  @map("mime_type")
+  uploadedBy    String   @map("uploaded_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("project_documents")
+}
+
+// Timesheet (referenced from timesheets-service)
+model Timesheet {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  projectId     String?  @map("project_id")
+  taskId        String?  @map("task_id")
+  employeeId    String   @map("employee_id")
+  date          DateTime @db.Date
+  hours         Decimal  @db.Decimal(10, 2)
+  description   String?  @db.Text
+  isBillable    Boolean  @default(false) @map("is_billable")
+  billingRate   Decimal?  @map("billing_rate") @db.Decimal(10, 2)
+  status        String   @default("draft") // draft, submitted, validated, invoiced
+  validatedBy   String?  @map("validated_by")
+  validatedAt   DateTime? @map("validated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task          Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([taskId])
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+  @@map("timesheets")
+}

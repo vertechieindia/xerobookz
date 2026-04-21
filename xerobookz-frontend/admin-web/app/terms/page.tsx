@@ -14,7 +14,10 @@ export default function TermsOfServicePage() {
             <Link href="/">
               <XeroBookzLogo size="lg" />
             </Link>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap justify-end">
+              <Link href="/about" className="text-secondary-700 hover:text-primary-600 transition-colors text-sm font-medium">
+                About Us
+              </Link>
               <Link href="/contact" className="text-secondary-700 hover:text-primary-600 transition-colors text-sm font-medium">
                 Contact
               </Link>
@@ -217,7 +220,8 @@ export default function TermsOfServicePage() {
                 © 2025 XeroBookz. All rights reserved.
               </p>
             </div>
-            <div className="flex gap-6 text-sm text-grey-600">
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-grey-600">
+              <Link href="/about" className="hover:text-secondary-800 transition-colors">About Us</Link>
               <Link href="/privacy" className="hover:text-secondary-800 transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-secondary-800 transition-colors">Terms of Service</Link>
               <Link href="/contact" className="hover:text-secondary-800 transition-colors">Contact</Link>

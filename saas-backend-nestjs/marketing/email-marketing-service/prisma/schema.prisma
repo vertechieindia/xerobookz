@@ -1,0 +1,175 @@
+// Email Marketing Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Email Campaign
+model EmailCampaign {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  subject       String
+  fromEmail     String   @map("from_email")
+  fromName      String?  @map("from_name")
+  templateId    String?  @map("template_id")
+  content       Json     // Email content (HTML, text, blocks)
+  status        String   @default("draft") // draft, scheduled, sending, sent, paused, cancelled
+  scheduledAt   DateTime? @map("scheduled_at")
+  sentAt        DateTime? @map("sent_at")
+  segment       Json?    // Target segment
+  settings      Json?    // Campaign settings
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  emails        Email[]
+  statistics    EmailCampaignStatistic[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("email_campaigns")
+}
+
+// Email Template
+model EmailTemplate {
+  id            String   @id @default(uuid())
+  tenantId      String?  @map("tenant_id") // null = global template
+  name          String
+  subject       String
+  category      String?  // newsletter, promotion, transactional, etc.
+  content       Json     // Template content (blocks)
+  preview       String?  @db.Text
+  isPublic      Boolean  @default(false) @map("is_public")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([category])
+  @@map("email_templates")
+}
+
+// Email (individual email sent)
+model Email {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  campaignId    String?  @map("campaign_id")
+  recipientEmail  String  @map("recipient_email")
+  recipientName String?  @map("recipient_name")
+  subject       String
+  content       Json     // Email content
+  status        String   @default("pending") // pending, sent, delivered, bounced, failed, opened, clicked
+  sentAt        DateTime? @map("sent_at")
+  deliveredAt   DateTime? @map("delivered_at")
+  openedAt      DateTime? @map("opened_at")
+  clickedAt     DateTime? @map("clicked_at")
+  bounceReason  String?  @map("bounce_reason") @db.Text
+  metadata      Json?    // Additional tracking data
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  campaign      EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  clicks        EmailClick[]
+
+  @@index([tenantId])
+  @@index([campaignId])
+  @@index([recipientEmail])
+  @@index([status])
+  @@map("emails")
+}
+
+// Email Click (link tracking)
+model EmailClick {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  emailId       String   @map("email_id")
+  linkUrl       String   @map("link_url")
+  clickedAt     DateTime @default(now()) @map("clicked_at")
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  email         Email    @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([emailId])
+  @@index([linkUrl])
+  @@map("email_clicks")
+}
+
+// Mailing List
+model MailingList {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  description   String?  @db.Text
+  subscriberCount Int    @default(0) @map("subscriber_count")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  subscribers   MailingListSubscriber[]
+
+  @@index([tenantId])
+  @@map("mailing_lists")
+}
+
+// Mailing List Subscriber
+model MailingListSubscriber {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  listId        String   @map("list_id")
+  email         String
+  name          String?
+  status        String   @default("subscribed") // subscribed, unsubscribed, bounced
+  subscribedAt  DateTime @default(now()) @map("subscribed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+  metadata      Json?    // Additional subscriber data
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  list          MailingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, email])
+  @@index([tenantId])
+  @@index([listId])
+  @@index([email])
+  @@index([status])
+  @@map("mailing_list_subscribers")
+}
+
+// Email Campaign Statistics
+model EmailCampaignStatistic {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  campaignId    String   @map("campaign_id")
+  date          DateTime @db.Date
+  emailsSent    Int      @default(0) @map("emails_sent")
+  emailsDelivered Int    @default(0) @map("emails_delivered")
+  emailsOpened  Int      @default(0) @map("emails_opened")
+  emailsClicked Int      @default(0) @map("emails_clicked")
+  emailsBounced Int      @default(0) @map("emails_bounced")
+  leadsCreated  Int      @default(0) @map("leads_created")
+  opportunitiesCreated Int @default(0) @map("opportunities_created")
+  revenue       Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  campaign      EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([tenantId])
+  @@index([campaignId])
+  @@index([date])
+  @@map("email_campaign_statistics")
+}

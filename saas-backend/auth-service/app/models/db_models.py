@@ -1,6 +1,6 @@
 """SQLAlchemy database models for auth-service"""
 
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table, Text
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -29,6 +29,7 @@ class Tenant(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     name = Column(String(255), nullable=False)
+    code = Column(String(50), unique=True, nullable=True, index=True)  # e.g. XB000016272 for login
     domain = Column(String(255), unique=True, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=func.now())
@@ -60,9 +61,10 @@ class Role(Base):
     """Role model"""
     
     __tablename__ = "roles"
+    __table_args__ = (UniqueConstraint("name", "tenant_id", name="uq_role_name_tenant"),)
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    name = Column(String(100), unique=True, nullable=False)
+    name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=func.now())

@@ -16,7 +16,8 @@ from ..schemas.request import (
     CompensationBandCreate, EmployeeCompensationCreate,
     EmployeeBenefitCreate, PerformanceReviewCreate,
     EmployeeSkillCreate, GlobalProfileCreate,
-    EmploymentHistoryCreate, JobArchitectureCreate
+    EmploymentHistoryCreate, JobArchitectureCreate,
+    EmployeeInvitationCreate, EmployeeInvitationAccept
 )
 from ..schemas.response import (
     EmployeeResponse,
@@ -336,3 +337,48 @@ async def get_job_architecture(
     service = EmployeeService(db)
     jobs = await service.get_job_architecture(tenant_id, job_family, job_level)
     return APIResponse.success_response(data=jobs)
+
+
+# ========== EMPLOYEE INVITATION ENDPOINTS ==========
+
+@router.post("/invitations", response_model=APIResponse)
+async def invite_employee(
+    invitation_data: EmployeeInvitationCreate,
+    request: Request,
+    db: Session = Depends(get_db_session)
+):
+    """Invite an employee"""
+    from shared_libs.auth.middleware import get_current_user
+    from shared_libs.models.enums import UserRole
+    
+    tenant_id = get_tenant_id(request)
+    current_user = get_current_user(request)
+    
+    # Check if user has admin or hrbp role
+    user_roles = current_user.get("roles", [])
+    if not any(role in [UserRole.ADMIN.value, UserRole.HRBP.value] for role in user_roles):
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins and HRBPs can invite employees"
+        )
+    
+    service = EmployeeService(db)
+    result = await service.invite_employee(invitation_data, tenant_id, current_user.get("sub"))
+    return APIResponse.success_response(data=result, message="Invitation sent successfully")
+
+
+@router.post("/invitations/accept", response_model=APIResponse)
+async def accept_invitation(
+    accept_data: EmployeeInvitationAccept,
+    db: Session = Depends(get_db_session)
+):
+    """Accept employee invitation"""
+    service = EmployeeService(db)
+    result = await service.accept_invitation(
+        token=accept_data.token,
+        password=accept_data.password,
+        first_name=accept_data.first_name,
+        last_name=accept_data.last_name
+    )
+    return APIResponse.success_response(data=result, message="Invitation accepted successfully")

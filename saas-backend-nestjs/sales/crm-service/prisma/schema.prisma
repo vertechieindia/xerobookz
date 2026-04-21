@@ -1,0 +1,163 @@
+// CRM Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Lead model
+model Lead {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  email         String?
+  phone         String?
+  company       String?
+  title         String?
+  source        String?  // website, email, phone, referral, etc.
+  status        String   @default("new") // new, contacted, qualified, converted, lost
+  score         Int      @default(0) // AI lead score
+  notes         String?  @db.Text
+  tags          String[] // Array of tags
+  assignedToId  String?  @map("assigned_to_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  opportunities Opportunity[]
+  activities    Activity[]
+  contacts      Contact[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([assignedToId])
+  @@map("leads")
+}
+
+// Contact model
+model Contact {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  leadId        String?  @map("lead_id")
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
+  email         String?
+  phone         String?
+  mobile        String?
+  jobTitle      String?  @map("job_title")
+  company       String?
+  address       Json?    // Address object
+  tags          String[]
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  lead          Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  opportunities Opportunity[]
+
+  @@index([tenantId])
+  @@index([leadId])
+  @@map("contacts")
+}
+
+// Opportunity model
+model Opportunity {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  leadId        String?  @map("lead_id")
+  contactId     String?  @map("contact_id")
+  name          String
+  expectedRevenue Decimal @map("expected_revenue") @db.Decimal(12, 2)
+  probability   Int      @default(0) // 0-100
+  stage         String   @default("new") // new, qualified, proposal, negotiation, won, lost
+  expectedCloseDate DateTime? @map("expected_close_date")
+  actualCloseDate DateTime? @map("actual_close_date")
+  assignedToId  String?  @map("assigned_to_id")
+  notes         String?  @db.Text
+  tags          String[]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  lead          Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  contact       Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  activities    Activity[]
+  quotations    Quotation[]
+
+  @@index([tenantId])
+  @@index([stage])
+  @@index([leadId])
+  @@index([contactId])
+  @@map("opportunities")
+}
+
+// Activity model (calls, meetings, emails, tasks)
+model Activity {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  type          String   // call, meeting, email, task, note
+  subject       String
+  description   String?  @db.Text
+  leadId        String?  @map("lead_id")
+  opportunityId String?  @map("opportunity_id")
+  contactId     String?  @map("contact_id")
+  assignedToId  String?  @map("assigned_to_id")
+  dueDate       DateTime? @map("due_date")
+  completedAt   DateTime? @map("completed_at")
+  status        String   @default("planned") // planned, in_progress, completed, cancelled
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  lead          Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@map("activities")
+}
+
+// Pipeline/Stage configuration
+model Pipeline {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  stages        Json     // Array of stage configurations
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("pipelines")
+}
+
+// Quotation model (linked to opportunities)
+model Quotation {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  opportunityId String?  @map("opportunity_id")
+  number        String   @unique
+  status        String   @default("draft") // draft, sent, accepted, rejected, expired
+  totalAmount   Decimal  @map("total_amount") @db.Decimal(12, 2)
+  validUntil    DateTime? @map("valid_until")
+  items         Json     // Quotation items
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([opportunityId])
+  @@index([status])
+  @@map("quotations")
+}

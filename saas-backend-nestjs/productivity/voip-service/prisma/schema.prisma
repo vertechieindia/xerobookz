@@ -1,0 +1,80 @@
+// VoIP Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// VoIP Call
+model VoIPCall {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  callerId      String   @map("caller_id")
+  receiverId    String?  @map("receiver_id")
+  phoneNumber   String?  @map("phone_number")
+  direction      String   // inbound, outbound
+  status         String   @default("ringing") // ringing, answered, ended, missed, failed
+  duration       Int?     // Duration in seconds
+  recordingUrl   String?  @map("recording_url")
+  linkedToType   String?  @map("linked_to_type") // crm_lead, sales_opportunity, helpdesk_ticket, etc.
+  linkedToId     String?  @map("linked_to_id")
+  notes          String?  @db.Text
+  startedAt      DateTime? @map("started_at")
+  answeredAt     DateTime? @map("answered_at")
+  endedAt        DateTime? @map("ended_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([callerId])
+  @@index([receiverId])
+  @@index([status])
+  @@index([linkedToType, linkedToId])
+  @@index([createdAt])
+  @@map("voip_calls")
+}
+
+// Call Queue
+model CallQueue {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  userId        String   @map("user_id")
+  contactId     String?  @map("contact_id")
+  phoneNumber   String   @map("phone_number")
+  linkedToType   String?  @map("linked_to_type")
+  linkedToId     String?  @map("linked_to_id")
+  priority      Int      @default(0)
+  scheduledAt   DateTime? @map("scheduled_at")
+  status        String   @default("pending") // pending, calling, completed, cancelled
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("call_queues")
+}
+
+// VoIP User Settings
+model VoIPUserSettings {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  userId        String   @unique @map("user_id")
+  phoneNumber   String?  @map("phone_number")
+  extension     String?
+  isAvailable   Boolean  @default(true) @map("is_available")
+  doNotDisturb  Boolean  @default(false) @map("do_not_disturb")
+  voicemailEnabled Boolean @default(true) @map("voicemail_enabled")
+  voicemailGreeting String? @map("voicemail_greeting") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("voip_user_settings")
+}

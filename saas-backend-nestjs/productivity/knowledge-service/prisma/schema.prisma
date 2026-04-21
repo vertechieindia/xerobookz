@@ -1,0 +1,85 @@
+// Knowledge Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Article
+model Article {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  title         String
+  content       String   @db.Text
+  parentId      String?  @map("parent_id")
+  isPublic      Boolean  @default(false) @map("is_public")
+  isPublished   Boolean  @default(false) @map("is_published")
+  coverImage    String?  @map("cover_image")
+  tags          String[]
+  customFields  Json?    @map("custom_fields")
+  viewCount     Int      @default(0) @map("view_count")
+  createdBy     String   @map("created_by")
+  updatedBy     String?  @map("updated_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  parent        Article? @relation("ArticleHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children      Article[] @relation("ArticleHierarchy")
+  members       ArticleMember[]
+  revisions     ArticleRevision[]
+
+  @@index([tenantId])
+  @@index([parentId])
+  @@index([isPublic])
+  @@index([isPublished])
+  @@index([createdBy])
+  @@map("articles")
+}
+
+// Article Member (access control)
+model ArticleMember {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  articleId     String   @map("article_id")
+  userId        String   @map("user_id")
+  role          String   @default("viewer") // owner, editor, viewer
+  canEdit       Boolean  @default(false) @map("can_edit")
+  canView       Boolean  @default(true) @map("can_view")
+  canDelete     Boolean  @default(false) @map("can_delete")
+  joinedAt      DateTime @default(now()) @map("joined_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  article       Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, userId])
+  @@index([tenantId])
+  @@index([articleId])
+  @@index([userId])
+  @@map("article_members")
+}
+
+// Article Revision
+model ArticleRevision {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  articleId     String   @map("article_id")
+  title         String
+  content       String   @db.Text
+  revisionNumber Int     @map("revision_number")
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  article       Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([articleId])
+  @@index([createdAt])
+  @@map("article_revisions")
+}

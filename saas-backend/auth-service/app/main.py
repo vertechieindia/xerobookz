@@ -17,7 +17,30 @@ from .api.routes import router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan events"""
-    # Startup
+    # Create DB tables if they don't exist (dev convenience)
+    from shared_libs.database.postgres import get_engine, Base
+    from app.models import db_models  # noqa: F401 - register models with Base.metadata
+    engine = get_engine()
+    Base.metadata.create_all(bind=engine)
+    # Migrate roles: allow same role name per tenant (drop old unique on name, add (name, tenant_id))
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE roles DROP CONSTRAINT IF EXISTS roles_name_key"))
+            conn.execute(text("ALTER TABLE roles DROP CONSTRAINT IF EXISTS uq_role_name_tenant"))
+            conn.execute(text("ALTER TABLE roles ADD CONSTRAINT uq_role_name_tenant UNIQUE (name, tenant_id)"))
+            conn.commit()
+    except Exception:
+        pass
+    # Add tenants.code if missing (tenant code for login, e.g. XB000016272)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(
+                "ALTER TABLE tenants ADD COLUMN IF NOT EXISTS code VARCHAR(50) UNIQUE"
+            ))
+            conn.commit()
+    except Exception:
+        pass
     yield
     # Shutdown
 
@@ -49,8 +72,9 @@ async def tenant_middleware(request: Request, call_next):
         tenant_id = get_tenant_id(request)
         request.state.tenant_id = tenant_id
     except HTTPException:
-        # Allow some endpoints without tenant
-        if request.url.path.startswith("/auth/login") or request.url.path.startswith("/auth/refresh"):
+        # Allow public endpoints without tenant (path may be /auth/... or /api/v1/auth/...)
+        path = request.url.path
+        if any(path.endswith(p) or p in path for p in ["/auth/login", "/auth/refresh", "/auth/signup"]):
             pass
         else:
             raise
@@ -65,7 +89,7 @@ async def health_check():
     return {"status": "healthy", "service": settings.SERVICE_NAME}
 
 
-app.include_router(router)
+app.include_router(router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn

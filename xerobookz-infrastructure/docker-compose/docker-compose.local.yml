@@ -1,0 +1,119 @@
+# Local API stack: databases + API gateway + auth + promo (for signup/login and promo validation)
+# Run from repo root: ./start-api.sh
+# Or: cd xerobookz-infrastructure/docker-compose && docker compose -f docker-compose.local.yml up -d
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: xerobookz-postgres
+    environment:
+      POSTGRES_USER: xerobookz
+      POSTGRES_PASSWORD: xerobookz_dev
+      POSTGRES_DB: xerobookz
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xerobookz"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - xerobookz-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: xerobookz-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - xerobookz-network
+
+  api-gateway:
+    build:
+      context: ../../saas-backend
+      dockerfile: api-gateway/Dockerfile
+    container_name: xerobookz-api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_URI: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz
+      REDIS_URI: redis://redis:6379/0
+      JWT_SECRET: dev-secret-key-change-in-production
+      TENANT_HEADER: X-Tenant-ID
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - xerobookz-network
+
+  auth-service:
+    build:
+      context: ../../saas-backend
+      dockerfile: auth-service/Dockerfile
+    container_name: xerobookz-auth-service
+    environment:
+      SERVICE_NAME: auth-service
+      POSTGRES_URI: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz
+      REDIS_URI: redis://redis:6379/0
+      JWT_SECRET: dev-secret-key-change-in-production
+      TENANT_HEADER: X-Tenant-ID
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      xerobookz-network:
+        aliases:
+          - auth-service
+
+  promo-service:
+    build:
+      context: ../../saas-backend
+      dockerfile: promo-service/Dockerfile
+    container_name: xerobookz-promo-service
+    environment:
+      POSTGRES_URI: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      xerobookz-network:
+        aliases:
+          - promo-service
+
+  contract-service:
+    build:
+      context: ../../saas-backend
+      dockerfile: contract-service/Dockerfile
+    container_name: xerobookz-contract-service
+    environment:
+      POSTGRES_URI: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz
+      AI_SERVICE_URL: http://ai-service:8025
+      TENANT_HEADER: X-Tenant-ID
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      xerobookz-network:
+        aliases:
+          - contract-service
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  xerobookz-network:
+    driver: bridge

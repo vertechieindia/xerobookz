@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from contextlib import asynccontextmanager
 import httpx
 import sys
@@ -41,6 +41,12 @@ SERVICE_ROUTES = {
     "marketing": "http://marketing-service:8023",
     "ess": "http://ess-service:8024",
     "ai": "http://ai-service:8025",
+    "super-admin": "http://super-admin-service:8026",
+    "promo": "http://promo-service:8027",
+    "mfa": "http://mfa-service:8028",
+    "oauth": "http://oauth-service:8029",
+    "saml": "http://saml-service:8030",
+    "contracts": "http://contract-service:8031",
 }
 
 
@@ -66,34 +72,45 @@ async def gateway_middleware(request: Request, call_next):
     if request.url.path in ["/health", "/docs", "/openapi.json"]:
         return await call_next(request)
     
-    # Extract service from path
-    path_parts = request.url.path.strip("/").split("/")
+    # Extract service from path (support /api/v1/<service>/... and /<service>/...)
+    path = request.url.path.strip("/")
+    path_parts = path.split("/")
     if not path_parts:
         return await call_next(request)
     
+    # Strip /api/v1 prefix if present
+    if len(path_parts) >= 3 and path_parts[0] == "api" and path_parts[1] == "v1":
+        path_parts = path_parts[2:]
+    
     service_name = path_parts[0]
     
-    # Verify tenant
-    try:
-        tenant_id = get_tenant_id(request)
-        request.state.tenant_id = tenant_id
-    except HTTPException:
-        # Allow auth endpoints without tenant
-        if service_name == "auth" and path_parts[1] in ["login", "refresh"]:
-            pass
-        else:
+    # Public endpoints (no tenant or JWT required)
+    public_auth_paths = ["login", "refresh", "signup"]
+    public_promo_paths = ["validate"]
+    is_public = (
+        (service_name == "auth" and len(path_parts) > 1 and path_parts[1] in public_auth_paths)
+        or (service_name == "promo" and len(path_parts) > 1 and path_parts[1] in public_promo_paths)
+    )
+    
+    tenant_id = None
+    if not is_public:
+        try:
+            tenant_id = get_tenant_id(request)
+            request.state.tenant_id = tenant_id
+        except HTTPException:
             raise
     
-    # Verify JWT for non-auth endpoints
-    if service_name != "auth":
+    # Verify JWT for non-public endpoints
+    user = None
+    if not is_public:
         user = get_current_user(request)
         if not user:
             raise HTTPException(status_code=401, detail="Unauthorized")
         request.state.user = user
     
-    # Rate limiting
+    # Rate limiting (skip Redis if unavailable for public endpoints)
     redis_client = get_redis_client()
-    rate_limit_key = f"ratelimit:{tenant_id}:{user.get('sub') if 'user' in request.state else 'anonymous'}:{service_name}"
+    rate_limit_key = f"ratelimit:{tenant_id or 'anon'}:{user.get('sub') if user else 'anonymous'}:{service_name}"
     current = redis_client.incr(rate_limit_key)
     if current == 1:
         redis_client.expire(rate_limit_key, 60)  # 1 minute window
@@ -103,10 +120,10 @@ async def gateway_middleware(request: Request, call_next):
             content={"error": "Rate limit exceeded"}
         )
     
-    # Route to service
+    # Route to service (forward path that services expect: /api/v1/<service>/...)
     if service_name in SERVICE_ROUTES:
         service_url = SERVICE_ROUTES[service_name]
-        target_path = "/" + "/".join(path_parts[1:]) if len(path_parts) > 1 else "/"
+        target_path = "/api/v1/" + "/".join(path_parts) if path_parts else "/"
         
         async with httpx.AsyncClient() as client:
             try:
@@ -117,9 +134,17 @@ async def gateway_middleware(request: Request, call_next):
                     params=dict(request.query_params),
                     content=await request.body()
                 )
-                return JSONResponse(
-                    content=response.json(),
-                    status_code=response.status_code
+                content_type = response.headers.get("content-type", "")
+                if "application/json" in content_type:
+                    return JSONResponse(
+                        content=response.json(),
+                        status_code=response.status_code
+                    )
+                return Response(
+                    content=response.content,
+                    status_code=response.status_code,
+                    media_type=content_type or "application/octet-stream",
+                    headers=dict(response.headers)
                 )
             except httpx.RequestError as e:
                 return JSONResponse(

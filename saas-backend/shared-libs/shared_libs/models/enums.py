@@ -108,6 +108,7 @@ class UserRole(str, Enum):
     IT_ADMIN = "it_admin"
     PROJECT_MANAGER = "project_manager"
     CONTRACTOR = "contractor"
+    CONTRACT_MANAGER = "contract_manager"  # Contract team: send/sign MSA, NDA, PO, WO, SOW, etc.
 
 
 class DocumentType(str, Enum):

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Module Images</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .module { width: 800px; height: 450px; margin: 20px; border: 2px solid #ddd; position: relative; }
+    canvas { border: 1px solid #ccc; margin: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Module Image Generator</h1>
+  <p>This will generate placeholder images for all modules. Right-click each canvas and "Save Image As" to save.</p>
+  
+  <script>
+    const modules = [
+      { name: "Platform Core", color: "#0EA5E9", icon: "🔐" },
+      { name: "Website Module", color: "#22C55E", icon: "🌐" },
+      { name: "Sales Module", color: "#0EA5E9", icon: "🛒" },
+      { name: "Finance Module", color: "#22C55E", icon: "💰" },
+      { name: "Inventory & Manufacturing", color: "#0EA5E9", icon: "📦" },
+      { name: "Human Resources", color: "#22C55E", icon: "👥" },
+      { name: "Marketing Module", color: "#0EA5E9", icon: "📢" },
+      { name: "Services Module", color: "#22C55E", icon: "💼" },
+      { name: "Productivity Module", color: "#0EA5E9", icon: "⚡" },
+      { name: "Customization Module", color: "#22C55E", icon: "🎨" }
+    ];
+
+    modules.forEach((module, index) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 450;
+      canvas.id = `canvas-${index}`;
+      canvas.style.display = 'block';
+      canvas.style.margin = '20px';
+      canvas.style.border = '2px solid #ddd';
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 800, 450);
+      gradient.addColorStop(0, module.color + '20');
+      gradient.addColorStop(1, module.color + '40');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 800, 450);
+      
+      // Icon
+      ctx.font = '120px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(module.icon, 400, 200);
+      
+      // Title
+      ctx.font = 'bold 48px Arial';
+      ctx.fillStyle = '#1F2937';
+      ctx.fillText(module.name, 400, 320);
+      
+      // Subtitle
+      ctx.font = '24px Arial';
+      ctx.fillStyle = '#6B7280';
+      ctx.fillText('XeroBookz Enterprise Platform', 400, 370);
+      
+      const label = document.createElement('p');
+      label.textContent = `${module.name} - Right-click canvas to save as ${module.name.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+      label.style.margin = '10px 0';
+      
+      document.body.appendChild(label);
+      document.body.appendChild(canvas);
+    });
+  </script>
+</body>
+</html>

@@ -1,8 +1,30 @@
 # XeroBookz - Complete Platform Documentation
 
-> **A comprehensive SaaS platform for Immigration & HR Compliance**
+> **Everything you need to run your entire business—from customer management to manufacturing, from HR to finance—all integrated, all in one place.**
 
-XeroBookz is a multi-tenant, microservices-based SaaS platform designed to streamline HR processes, manage immigration compliance, and handle employee lifecycle management. The platform provides three distinct portals (Admin, Employer, and Employee Self-Service) with a unified backend infrastructure.
+XeroBookz is a multi-tenant, microservices-based SaaS platform. It provides **10 modules**, **53 services**, **250+ features**, and **31+ backend microservices** across Platform Core, Website, Sales, Finance, Inventory & Manufacturing, HR, Marketing, Services, Productivity, and Customization.
+
+---
+
+## 📚 Core Documentation
+
+All canonical product and technical documents live in **[`document/`](document/)**.
+
+**Platform totals:** 10 modules · 53 services · 250+ features · 31 backend microservices
+
+| Document | Description |
+|---------|-------------|
+| [**BRD**](document/BRD.md) | Business Requirements Document – objectives, stakeholders, scope, 60 business requirements |
+| [**FSD**](document/FSD.md) | Functional Specifications Document – features by area, user roles, 85+ functional specs, acceptance criteria |
+| [**TDD**](document/TDD.md) | Technical Design Document – tech stack, APIs, data design, security |
+| [**ARCHITECTURE**](document/ARCHITECTURE.md) | Full system architecture – 31 microservices, data flow, deployment |
+| [**APPLICATION-BUSINESS-FEATURES**](document/APPLICATION-BUSINESS-FEATURES.md) | Complete list of every application feature (current and planned) by module and service |
+
+For running the app locally, see [RUN-LOCAL.md](document/RUN-LOCAL.md).
+
+For **what is implemented vs pending** and a **manual QA checklist**, see [PROGRESS.md](document/PROGRESS.md).
+
+**Documentation maintenance:** When enhancing, changing, or improving the app (features, roles, APIs, or UX), update the relevant files under [`document/`](document/) (BRD, FSD, TDD, ARCHITECTURE, APPLICATION-BUSINESS-FEATURES) and refresh [PROGRESS.md](document/PROGRESS.md) when delivery or test focus changes.
 
 ---
 

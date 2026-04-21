@@ -1,0 +1,63 @@
+// Timesheets Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Timesheet Entry
+model TimesheetEntry {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  projectId     String?  @map("project_id")
+  taskId        String?  @map("task_id")
+  date          DateTime @db.Date
+  hours         Decimal  @db.Decimal(10, 2)
+  description   String?  @db.Text
+  isBillable    Boolean  @default(false) @map("is_billable")
+  billingRate   Decimal?  @map("billing_rate") @db.Decimal(10, 2)
+  status        String   @default("draft") // draft, submitted, validated, invoiced
+  validatedBy   String?  @map("validated_by")
+  validatedAt   DateTime? @map("validated_at")
+  invoicedAt    DateTime? @map("invoiced_at")
+  timerStartedAt DateTime? @map("timer_started_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([projectId])
+  @@index([taskId])
+  @@index([date])
+  @@index([status])
+  @@map("timesheet_entries")
+}
+
+// Timesheet Summary (weekly/monthly)
+model TimesheetSummary {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  periodType    String   @map("period_type") // week, month
+  periodStart   DateTime @map("period_start") @db.Date
+  periodEnd     DateTime @map("period_end") @db.Date
+  totalHours    Decimal  @default(0) @map("total_hours") @db.Decimal(10, 2)
+  billableHours Decimal  @default(0) @map("billable_hours") @db.Decimal(10, 2)
+  overtimeHours Decimal  @default(0) @map("overtime_hours") @db.Decimal(10, 2)
+  status        String   @default("draft") // draft, submitted, validated
+  submittedAt   DateTime? @map("submitted_at")
+  validatedAt   DateTime? @map("validated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([employeeId, periodType, periodStart])
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("timesheet_summaries")
+}

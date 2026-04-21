@@ -70,3 +70,7 @@ coverage/
 *.key
 *.cert
 
+# Accidental nested paths / local PID files
+saas-backdykankanala/
+xerobookz-frontend/.frontend-pids
+

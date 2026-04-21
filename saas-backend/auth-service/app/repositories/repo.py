@@ -6,7 +6,7 @@ from uuid import UUID
 import bcrypt
 from typing import Optional
 
-from ..models.db_models import User, Role, TenantUser, UserRole
+from ..models.db_models import User, Role, TenantUser, Tenant
 
 
 class AuthRepository:
@@ -78,4 +78,50 @@ class AuthRepository:
         if role not in user.roles:
             user.roles.append(role)
             self.db.commit()
+    
+    def get_tenant_by_code(self, code: str) -> Optional[Tenant]:
+        """Get tenant by human-readable code (e.g. XB000016272)."""
+        return self.db.query(Tenant).filter(Tenant.code == code).first()
+
+    def create_tenant(
+        self, name: str, domain: str = None, is_active: bool = True, code: str = None
+    ) -> Tenant:
+        """Create a new tenant"""
+        tenant = Tenant(
+            name=name,
+            domain=domain,
+            is_active=is_active,
+            code=code,
+        )
+        self.db.add(tenant)
+        self.db.commit()
+        self.db.refresh(tenant)
+        return tenant
+    
+    def get_role_by_name(self, name: str, tenant_id: UUID) -> Optional[Role]:
+        """Get role by name for tenant"""
+        return self.db.query(Role).filter(
+            and_(
+                Role.name == name,
+                Role.tenant_id == tenant_id
+            )
+        ).first()
+
+    def get_tenant_users(self, tenant_id: UUID) -> list:
+        """Get all users in tenant (User with role names) for admin assignment."""
+        from sqlalchemy.orm import joinedload
+        tenant_users = (
+            self.db.query(TenantUser)
+            .filter(TenantUser.tenant_id == tenant_id, TenantUser.is_active == True)
+            .options(joinedload(TenantUser.user).joinedload(User.roles))
+            .all()
+        )
+        return [
+            {
+                "user_id": tu.user_id,
+                "email": tu.user.email,
+                "role_names": [r.name for r in tu.user.roles],
+            }
+            for tu in tenant_users
+        ]
 

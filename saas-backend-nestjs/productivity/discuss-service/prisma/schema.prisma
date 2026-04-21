@@ -1,0 +1,175 @@
+// Discuss Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Channel
+model Channel {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  description   String?  @db.Text
+  type          String   @default("public") // public, private, direct
+  isArchived    Boolean  @default(false) @map("is_archived")
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  members       ChannelMember[]
+  messages      Message[]
+
+  @@index([tenantId])
+  @@index([type])
+  @@map("channels")
+}
+
+// Channel Member
+model ChannelMember {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  channelId     String   @map("channel_id")
+  userId        String   @map("user_id")
+  role          String   @default("member") // owner, admin, member
+  isMuted       Boolean  @default(false) @map("is_muted")
+  lastReadAt    DateTime? @map("last_read_at")
+  joinedAt      DateTime @default(now()) @map("joined_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  channel       Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([tenantId])
+  @@index([channelId])
+  @@index([userId])
+  @@map("channel_members")
+}
+
+// Message
+model Message {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  channelId     String   @map("channel_id")
+  senderId      String   @map("sender_id")
+  content       String   @db.Text
+  messageType   String   @default("text") @map("message_type") // text, image, file, video, audio, system
+  fileUrl       String?  @map("file_url")
+  replyToId     String?  @map("reply_to_id")
+  isEdited      Boolean  @default(false) @map("is_edited")
+  editedAt      DateTime? @map("edited_at")
+  isDeleted     Boolean  @default(false) @map("is_deleted")
+  deletedAt     DateTime? @map("deleted_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  channel       Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  reactions     MessageReaction[]
+  readReceipts  MessageReadReceipt[]
+
+  @@index([tenantId])
+  @@index([channelId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// Message Reaction
+model MessageReaction {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  messageId     String   @map("message_id")
+  userId        String   @map("user_id")
+  emoji         String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  message       Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([tenantId])
+  @@index([messageId])
+  @@map("message_reactions")
+}
+
+// Message Read Receipt
+model MessageReadReceipt {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  messageId     String   @map("message_id")
+  userId        String   @map("user_id")
+  readAt        DateTime @default(now()) @map("read_at")
+
+  // Relations
+  message       Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([tenantId])
+  @@index([messageId])
+  @@map("message_read_receipts")
+}
+
+// Video Call
+model VideoCall {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  channelId     String?  @map("channel_id")
+  initiatorId   String   @map("initiator_id")
+  title         String?
+  status        String   @default("active") // active, ended
+  startedAt     DateTime @default(now()) @map("started_at")
+  endedAt       DateTime? @map("ended_at")
+  participants  Json     // Array of participant IDs
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([channelId])
+  @@index([status])
+  @@map("video_calls")
+}
+
+// Voice Call
+model VoiceCall {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  callerId      String   @map("caller_id")
+  receiverId    String   @map("receiver_id")
+  status        String   @default("ringing") // ringing, answered, ended, missed
+  startedAt     DateTime? @map("started_at")
+  endedAt       DateTime? @map("ended_at")
+  duration      Int?     // Duration in seconds
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([callerId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("voice_calls")
+}
+
+// Notification
+model Notification {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  userId        String   @map("user_id")
+  type          String   // message, mention, channel_invite, call, system
+  title         String
+  body          String   @db.Text
+  link          String?
+  isRead        Boolean  @default(false) @map("is_read")
+  readAt        DateTime? @map("read_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}

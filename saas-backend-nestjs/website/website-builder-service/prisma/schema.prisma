@@ -1,0 +1,137 @@
+// Website Builder Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Website model
+model Website {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  domain        String?  @unique
+  subdomain     String?  @unique
+  status        String   @default("draft") // draft, published, archived
+  themeId       String?  @map("theme_id")
+  settings      Json?    // Website-wide settings
+  seoSettings   Json?    @map("seo_settings") // SEO metadata
+  analyticsId   String?  @map("analytics_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  pages         Page[]
+  theme         Theme?   @relation(fields: [themeId], references: [id])
+  menus         Menu[]
+
+  @@index([tenantId])
+  @@index([domain])
+  @@index([subdomain])
+  @@map("websites")
+}
+
+// Page model
+model Page {
+  id            String   @id @default(uuid())
+  websiteId     String   @map("website_id")
+  tenantId      String   @map("tenant_id")
+  title         String
+  slug          String
+  path          String   // URL path
+  isHomePage    Boolean  @default(false) @map("is_home_page")
+  isPublished   Boolean  @default(false) @map("is_published")
+  metaTitle     String?  @map("meta_title")
+  metaDescription String? @map("meta_description")
+  metaKeywords  String?  @map("meta_keywords")
+  content       Json     // Page content (blocks, layout)
+  settings      Json?    // Page-specific settings
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  website       Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, slug])
+  @@unique([websiteId, path])
+  @@index([tenantId])
+  @@index([websiteId])
+  @@map("pages")
+}
+
+// Theme model
+model Theme {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  category      String?  // business, portfolio, ecommerce, etc.
+  previewImage  String?  @map("preview_image")
+  isDefault     Boolean  @default(false) @map("is_default")
+  isPremium     Boolean  @default(false) @map("is_premium")
+  config        Json     // Theme configuration (colors, fonts, layouts)
+  assets        Json?    // Theme assets
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  websites      Website[]
+
+  @@map("themes")
+}
+
+// Menu model
+model Menu {
+  id            String   @id @default(uuid())
+  websiteId     String   @map("website_id")
+  tenantId      String   @map("tenant_id")
+  name          String
+  location      String   // header, footer, sidebar
+  items         Json     // Menu items structure
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  website       Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([websiteId])
+  @@map("menus")
+}
+
+// Block template model (reusable blocks)
+model BlockTemplate {
+  id            String   @id @default(uuid())
+  tenantId      String?  @map("tenant_id") // null = global template
+  name          String
+  category      String   // hero, content, feature, testimonial, etc.
+  preview       Json?    // Preview data
+  config        Json     // Block configuration
+  isPublic      Boolean  @default(false) @map("is_public")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([category])
+  @@map("block_templates")
+}
+
+// AI Generation history
+model AIGeneration {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  websiteId     String?  @map("website_id")
+  type          String   // layout, content, image, seo
+  prompt        String
+  result        Json     // Generated result
+  model         String?  // AI model used
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([websiteId])
+  @@map("ai_generations")
+}

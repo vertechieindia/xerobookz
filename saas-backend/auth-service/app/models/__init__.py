@@ -1,12 +1,11 @@
 """Database models"""
 
-from .db_models import User, Role, Permission, UserRole, TenantUser, Tenant
+from .db_models import User, Role, Permission, TenantUser, Tenant
 
 __all__ = [
     "User",
     "Role",
     "Permission",
-    "UserRole",
     "TenantUser",
     "Tenant",
 ]

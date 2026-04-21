@@ -14,11 +14,11 @@ class UserCreate(BaseModel):
 
 
 class UserLogin(BaseModel):
-    """User login schema"""
+    """User login schema - tenant_id can be UUID or tenant code (e.g. XB000016272)."""
     
     email: EmailStr
     password: str
-    tenant_id: UUID
+    tenant_id: str  # UUID string or tenant code
     mfa_code: Optional[str] = None
 
 
@@ -35,4 +35,13 @@ class AssignRoleRequest(BaseModel):
     
     user_id: UUID
     role_id: UUID
+
+
+class SignupRequest(BaseModel):
+    """User signup schema"""
+    
+    company_name: str
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    promo_code: Optional[str] = None
 

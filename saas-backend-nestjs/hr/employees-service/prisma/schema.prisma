@@ -1,0 +1,292 @@
+// Employees Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Employee model
+model Employee {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  userId            String?  @unique @map("user_id") // Link to auth user
+  employeeNumber    String   @unique @map("employee_number")
+  firstName         String   @map("first_name")
+  lastName          String   @map("last_name")
+  email             String   @unique
+  phone             String?
+  mobile            String?
+  jobTitle          String?  @map("job_title")
+  departmentId      String?  @map("department_id")
+  managerId         String?  @map("manager_id")
+  workLocation      String?  @map("work_location")
+  workEmail         String?  @map("work_email")
+  workPhone         String?  @map("work_phone")
+  hireDate          DateTime? @map("hire_date")
+  contractType      String?  @map("contract_type") // permanent, contract, intern, etc.
+  contractStartDate DateTime? @map("contract_start_date")
+  contractEndDate   DateTime? @map("contract_end_date")
+  status            String   @default("active") // active, on_leave, terminated, inactive
+  workingHours      Decimal? @map("working_hours") @db.Decimal(5, 2)
+  timezone          String?  @default("UTC")
+  avatarUrl         String?  @map("avatar_url")
+  notes             String?  @db.Text
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  manager           Employee? @relation("EmployeeManager", fields: [managerId], references: [id])
+  subordinates      Employee[] @relation("EmployeeManager")
+  skills            EmployeeSkill[]
+  documents         EmployeeDocument[]
+  emergencyContacts EmergencyContact[]
+  addresses         EmployeeAddress[]
+  bankAccounts      EmployeeBankAccount[]
+  contracts         EmployeeContract[]
+  appraisals        Appraisal[]
+  timeOffRequests   TimeOffRequest[]
+  attendanceRecords AttendanceRecord[]
+
+  @@index([tenantId])
+  @@index([employeeNumber])
+  @@index([email])
+  @@index([departmentId])
+  @@index([managerId])
+  @@index([status])
+  @@map("employees")
+}
+
+// Department model
+model Department {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  code          String?  @unique
+  parentId      String?  @map("parent_id")
+  managerId     String?  @map("manager_id")
+  description   String?  @db.Text
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([parentId])
+  @@map("departments")
+}
+
+// Employee Skill
+model EmployeeSkill {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  skillName     String   @map("skill_name")
+  level         String?  // beginner, intermediate, advanced, expert
+  certification String?  @db.Text
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, skillName])
+  @@index([tenantId])
+  @@index([employeeId])
+  @@map("employee_skills")
+}
+
+// Employee Document
+model EmployeeDocument {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  name          String
+  documentType  String   @map("document_type") // contract, id, visa, certificate, etc.
+  fileUrl       String   @map("file_url")
+  fileSize      Int?     @map("file_size")
+  mimeType      String?  @map("mime_type")
+  requiresSignature Boolean @default(false) @map("requires_signature")
+  signedAt      DateTime? @map("signed_at")
+  expiresAt     DateTime? @map("expires_at")
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([documentType])
+  @@map("employee_documents")
+}
+
+// Emergency Contact
+model EmergencyContact {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  name          String
+  relationship  String?  // spouse, parent, sibling, friend, etc.
+  phone         String
+  email         String?
+  address       Json?    // Address object
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@map("emergency_contacts")
+}
+
+// Employee Address
+model EmployeeAddress {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  addressType   String   @map("address_type") // home, mailing, permanent
+  street        String?
+  city          String?
+  state         String?
+  postalCode    String?  @map("postal_code")
+  country       String?
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@map("employee_addresses")
+}
+
+// Employee Bank Account
+model EmployeeBankAccount {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  bankName      String   @map("bank_name")
+  accountNumber String   @map("account_number")
+  accountType   String?  @map("account_type") // checking, savings
+  routingNumber String?  @map("routing_number")
+  iban          String?
+  swift         String?
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@map("employee_bank_accounts")
+}
+
+// Employee Contract
+model EmployeeContract {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  contractType  String   @map("contract_type")
+  startDate     DateTime @map("start_date")
+  endDate       DateTime? @map("end_date")
+  salary        Decimal? @db.Decimal(12, 2)
+  currency      String?  @default("USD")
+  workingHours  Decimal? @map("working_hours") @db.Decimal(5, 2)
+  documentUrl   String?  @map("document_url")
+  status        String   @default("draft") // draft, active, expired, terminated
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("employee_contracts")
+}
+
+// Attendance Record
+model AttendanceRecord {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  checkIn       DateTime @map("check_in")
+  checkOut      DateTime? @map("check_out")
+  location      String?  // GPS coordinates or location name
+  workHours     Decimal? @map("work_hours") @db.Decimal(5, 2)
+  breakHours    Decimal? @map("break_hours") @db.Decimal(5, 2)
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([checkIn])
+  @@map("attendance_records")
+}
+
+// Time Off Request (referenced from time-off-service)
+model TimeOffRequest {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  leaveType     String   @map("leave_type")
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  days          Decimal  @db.Decimal(5, 2)
+  status        String   @default("draft") // draft, submitted, approved, rejected, cancelled
+  reason        String?  @db.Text
+  approvedBy    String?  @map("approved_by")
+  approvedAt    DateTime? @map("approved_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([startDate])
+  @@map("time_off_requests")
+}
+
+// Appraisal (referenced from appraisals-service)
+model Appraisal {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  appraisalType String   @map("appraisal_type") // annual, quarterly, probation, etc.
+  period        String?  // e.g., "2024 Q1"
+  status        String   @default("draft") // draft, in_progress, completed, cancelled
+  dueDate       DateTime? @map("due_date")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("appraisals")
+}

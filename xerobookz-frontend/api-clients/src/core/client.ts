@@ -2,14 +2,21 @@ import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosError, InternalAxiosRequestConfig } from "axios";
 import { APIResponse } from "../types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// In browser on localhost, hit API at 8000 directly so login/signup work without proxy. Otherwise use env or same-origin.
+function getApiBaseUrl(): string {
+  if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL)
+    return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== "undefined" && window.location?.hostname === "localhost")
+    return "http://localhost:8000";
+  return process.env.NEXT_PUBLIC_API_URL ?? "";
+}
 
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: getApiBaseUrl(),
       timeout: 30000,
       headers: {
         "Content-Type": "application/json",
@@ -95,7 +102,8 @@ class ApiClient {
       const refreshToken = localStorage.getItem("xerobookz_refresh_token");
       if (!refreshToken) return false;
 
-      const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+      const base = getApiBaseUrl() || "";
+      const response = await axios.post(`${base}/api/v1/auth/refresh`, {
         refresh_token: refreshToken,
       });
 

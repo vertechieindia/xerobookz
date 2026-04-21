@@ -1,0 +1,379 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: xerobookz-postgres
+    environment:
+      POSTGRES_USER: xerobookz
+      POSTGRES_PASSWORD: xerobookz_dev
+      POSTGRES_DB: xerobookz
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xerobookz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Platform Core Services
+  auth-service:
+    build:
+      context: ./platform-core/auth-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-auth-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_auth?schema=public
+      PORT: 9001
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 1d
+      REFRESH_TOKEN_SECRET: your-super-secret-refresh-key-change-in-production
+      REFRESH_TOKEN_EXPIRES_IN: 7d
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9001:9001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./platform-core/auth-service:/app
+      - /app/node_modules
+
+  # Website Services
+  website-builder-service:
+    build:
+      context: ./website/website-builder-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-website-builder-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_website?schema=public
+      PORT: 9101
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9101:9101"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./website/website-builder-service:/app
+      - /app/node_modules
+
+  # Sales Services
+  crm-service:
+    build:
+      context: ./sales/crm-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-crm-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_crm?schema=public
+      PORT: 9201
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9201:9201"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./sales/crm-service:/app
+      - /app/node_modules
+
+  # Inventory Services
+  inventory-service:
+    build:
+      context: ./inventory/inventory-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-inventory-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_inventory?schema=public
+      PORT: 9301
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9301:9301"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./inventory/inventory-service:/app
+      - /app/node_modules
+
+  # HR Services
+  employees-service:
+    build:
+      context: ./hr/employees-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-employees-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_hr?schema=public
+      PORT: 9401
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9401:9401"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./hr/employees-service:/app
+      - /app/node_modules
+
+  # Marketing Services
+  marketing-automation-service:
+    build:
+      context: ./marketing/marketing-automation-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-marketing-automation-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_marketing?schema=public
+      PORT: 9501
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9501:9501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./marketing/marketing-automation-service:/app
+      - /app/node_modules
+
+  email-marketing-service:
+    build:
+      context: ./marketing/email-marketing-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-email-marketing-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_email?schema=public
+      PORT: 9502
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9502:9502"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./marketing/email-marketing-service:/app
+      - /app/node_modules
+
+  sms-marketing-service:
+    build:
+      context: ./marketing/sms-marketing-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-sms-marketing-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_sms?schema=public
+      PORT: 9503
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9503:9503"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./marketing/sms-marketing-service:/app
+      - /app/node_modules
+
+  events-service:
+    build:
+      context: ./marketing/events-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-events-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_events?schema=public
+      PORT: 9504
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9504:9504"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./marketing/marketing/events-service:/app
+      - /app/node_modules
+
+  surveys-service:
+    build:
+      context: ./marketing/surveys-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-surveys-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_surveys?schema=public
+      PORT: 9505
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9505:9505"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./marketing/surveys-service:/app
+      - /app/node_modules
+
+  # Services Module
+  project-service:
+    build:
+      context: ./services/project-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-project-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_projects?schema=public
+      PORT: 9601
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9601:9601"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./services/project-service:/app
+      - /app/node_modules
+
+  timesheets-service:
+    build:
+      context: ./services/timesheets-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-timesheets-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_timesheets?schema=public
+      PORT: 9602
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9602:9602"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./services/timesheets-service:/app
+      - /app/node_modules
+
+  # Productivity Services
+  discuss-service:
+    build:
+      context: ./productivity/discuss-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-discuss-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_discuss?schema=public
+      PORT: 9701
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9701:9701"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./productivity/discuss-service:/app
+      - /app/node_modules
+
+  approvals-service:
+    build:
+      context: ./productivity/approvals-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-approvals-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_approvals?schema=public
+      PORT: 9702
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9702:9702"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./productivity/approvals-service:/app
+      - /app/node_modules
+
+  iot-service:
+    build:
+      context: ./productivity/iot-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-iot-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_iot?schema=public
+      PORT: 9703
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9703:9703"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./productivity/iot-service:/app
+      - /app/node_modules
+
+  voip-service:
+    build:
+      context: ./productivity/voip-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-voip-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_voip?schema=public
+      PORT: 9704
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9704:9704"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./productivity/voip-service:/app
+      - /app/node_modules
+
+  knowledge-service:
+    build:
+      context: ./productivity/knowledge-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-knowledge-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_knowledge?schema=public
+      PORT: 9705
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9705:9705"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./productivity/knowledge-service:/app
+      - /app/node_modules
+
+  # Customization Services
+  studio-service:
+    build:
+      context: ./customization/studio-service
+      dockerfile: Dockerfile
+    container_name: xerobookz-studio-service
+    environment:
+      DATABASE_URL: postgresql://xerobookz:xerobookz_dev@postgres:5432/xerobookz_studio?schema=public
+      PORT: 9801
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "9801:9801"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./customization/studio-service:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:

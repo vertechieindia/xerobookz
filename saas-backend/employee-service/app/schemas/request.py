@@ -141,3 +141,20 @@ class JobArchitectureCreate(BaseModel):
     job_category: Optional[str] = None
     description: Optional[str] = None
     requirements: Optional[str] = None
+
+
+class EmployeeInvitationCreate(BaseModel):
+    """Employee invitation request"""
+    email: EmailStr
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    job_title: Optional[str] = None
+    department_id: Optional[UUID] = None
+
+
+class EmployeeInvitationAccept(BaseModel):
+    """Employee invitation acceptance"""
+    token: str
+    password: str
+    first_name: str
+    last_name: str

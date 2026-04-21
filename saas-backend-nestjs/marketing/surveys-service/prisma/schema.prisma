@@ -1,0 +1,83 @@
+// Surveys Service - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Survey
+model Survey {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  title         String
+  description   String?  @db.Text
+  category      String?  // satisfaction, appraisal, marketing, feedback, etc.
+  questions     Json     // Survey questions structure
+  settings      Json?    // Survey settings (anonymous, required fields, etc.)
+  status        String   @default("draft") // draft, published, closed
+  isLive        Boolean  @default(false) @map("is_live") // For live sessions
+  backgroundImage String? @map("background_image")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  responses     SurveyResponse[]
+  sessions      SurveySession[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("surveys")
+}
+
+// Survey Response
+model SurveyResponse {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  surveyId      String   @map("survey_id")
+  respondentId  String?  @map("respondent_id") // Can be employee, customer, etc.
+  respondentType String? @map("respondent_type") // employee, customer, anonymous
+  responses     Json     // Answers to questions
+  isAnonymous  Boolean  @default(false) @map("is_anonymous")
+  sessionId    String?  @map("session_id") // For live sessions
+  submittedAt  DateTime @default(now()) @map("submitted_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  survey        Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  session       SurveySession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([surveyId])
+  @@index([respondentId])
+  @@index([sessionId])
+  @@map("survey_responses")
+}
+
+// Survey Session (for live surveys)
+model SurveySession {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  surveyId      String   @map("survey_id")
+  sessionCode   String   @unique @map("session_code") // Unique code for participants
+  hostId        String   @map("host_id") // User hosting the session
+  currentQuestion Int?   @default(0) @map("current_question")
+  status        String   @default("pending") // pending, active, completed
+  startedAt     DateTime? @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  settings      Json?    // Session settings
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  survey        Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  responses     SurveyResponse[]
+
+  @@index([tenantId])
+  @@index([surveyId])
+  @@index([sessionCode])
+  @@map("survey_sessions")
+}

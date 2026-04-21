@@ -8,16 +8,16 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt .
+# Install Python dependencies (build context: saas-backend)
+COPY auth-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy shared-libs (build context should include it)
+# Copy shared-libs
 COPY shared-libs /app/shared-libs
 RUN pip install -e /app/shared-libs || echo "Shared-libs not found, continuing..."
 
 # Copy application
-COPY app /app/app
+COPY auth-service/app /app/app
 
 # Expose port
 EXPOSE 8001

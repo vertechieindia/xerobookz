@@ -275,3 +275,24 @@ class JobArchitecture(Base):
     status = Column(String(50), default="active")
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class EmployeeInvitation(Base):
+    """Employee invitation model"""
+    
+    __tablename__ = "employee_invitations"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    email = Column(String(255), nullable=False, index=True)
+    first_name = Column(String(100), nullable=True)
+    last_name = Column(String(100), nullable=True)
+    job_title = Column(String(255), nullable=True)
+    department_id = Column(UUID(as_uuid=True), nullable=True)
+    invitation_token = Column(String(255), unique=True, nullable=False, index=True)
+    invited_by = Column(UUID(as_uuid=True), nullable=False)  # Company admin user ID
+    status = Column(String(50), default="pending")  # pending, accepted, expired, cancelled
+    expires_at = Column(DateTime, nullable=False)
+    accepted_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

@@ -3,8 +3,16 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { XeroBookzLogo, Button, Card, Icon } from "@xerobookz/ui-shared";
-import { Shield, Building2, UserCircle, FileCheck, Plane, UserPlus, Files, Clock, Zap, DollarSign, TrendingUp, GraduationCap, MessageSquare, Receipt, CreditCard, Globe, Heart, Settings, Briefcase, Target, Users, BarChart3, CheckCircle2, Sparkles, ArrowRight, Star, Award, Brain, Rocket, ChevronDown } from "lucide-react";
+import { XeroBookzLogo, Button, Card } from "@xerobookz/ui-shared";
+import { 
+  Shield, Building2, UserCircle, ArrowRight, Star, Rocket, ChevronDown,
+  ShoppingCart, Package, Factory, Wrench, CheckSquare, Mail, MessageCircle, 
+  Calendar, FileText, Monitor, Phone, BookOpen, Code, 
+  Kanban, Timer, MapPin, Headphones, CalendarDays, ClipboardCheck, 
+  Cog, Repeat, Car, Search, Megaphone, BarChart, Layers, 
+  Lock, Wallet, FileSpreadsheet, PenTool, CheckCircle2,
+  DollarSign, Globe, Sparkles, Users, Target, UserPlus, Receipt, Files, Zap, MessageSquare, Briefcase, Settings, Plane
+} from "lucide-react";
 
 // Helper function to generate URL-friendly slugs
 const generateSlug = (title: string): string => {
@@ -19,7 +27,7 @@ export default function Home() {
   const [isSignInDropdownOpen, setIsSignInDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [scrollY, setScrollY] = useState(0);
-  const [revealedElements, setRevealedElements] = useState<Set<string>>(new Set());
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -28,47 +36,15 @@ export default function Home() {
         setIsSignInDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Scroll position tracking for parallax effects
+  // Scroll position tracking
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
+    const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Intersection Observer for scroll reveal animations
-  useEffect(() => {
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: "0px 0px -50px 0px",
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const id = entry.target.getAttribute("data-reveal-id");
-          if (id) {
-            setRevealedElements((prev) => new Set([...prev, id]));
-          }
-        }
-      });
-    }, observerOptions);
-
-    const elements = document.querySelectorAll("[data-reveal-id]");
-    elements.forEach((el) => observer.observe(el));
-
-    return () => {
-      elements.forEach((el) => observer.unobserve(el));
-    };
   }, []);
 
   const handleFeatureClick = (title: string) => {
@@ -76,326 +52,504 @@ export default function Home() {
     router.push(`/features/${slug}`);
   };
 
-  const features = [
-    {
-      title: "I-9 Compliance",
-      description: "Complete, update and retain your Form I-9s digitally with effortless compliance management.",
-      icon: "file-check" as const,
-    },
-    {
-      title: "Immigration Management",
-      description: "File, track and manage H-1B petitions and immigration cases under one unified platform.",
-      icon: "plane" as const,
-    },
-    {
-      title: "Employee Onboarding",
-      description: "Onboard multiple employees at once and manage their work authorization seamlessly.",
-      icon: "user-plus" as const,
-    },
-    {
-      title: "Document Management",
-      description: "Collect, manage and retain employee documentation with digital signatures and audit trails.",
-      icon: "files" as const,
-    },
-    {
-      title: "Timesheets & Leave",
-      description: "Track employee tasks, approve timesheets and manage leave requests efficiently.",
-      icon: "clock" as const,
-    },
-    {
-      title: "PAF Automation",
-      description: "Auto-generate Public Access Files in seconds and maintain compliance effortlessly.",
-      icon: "zap" as const,
-    },
-  ];
+  const toggleModule = (moduleId: string) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+        setTimeout(() => {
+          const element = document.getElementById(`module-${moduleId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 300);
+      }
+      return next;
+    });
+  };
 
-  // Enterprise HRIS Features
-  const enterpriseFeatures = [
+  // COMPREHENSIVE MODULES DATA
+  const allModules = [
     {
-      category: "HRIS & Core HR",
-      items: [
+      id: "platform-core",
+      name: "Platform Core",
+      description: "Foundation services for authentication, multi-tenancy, access control, and billing",
+      icon: Shield,
+      color: "primary",
+      services: [
         {
-          title: "Compensation Management",
-          description: "Manage compensation bands, salary structures, and geo-based compensation with approval workflows.",
-          icon: DollarSign,
-          color: "primary",
+          title: "Authentication & Security",
+          description: "Secure user authentication with JWT tokens, refresh tokens, multi-factor authentication, and session management",
+          icon: Lock,
+          features: ["User Registration", "Login/Logout", "JWT Tokens", "Refresh Tokens", "Session Management", "Password Reset"],
         },
         {
-          title: "Benefits Administration",
-          description: "Comprehensive benefits plans, enrollment, open enrollment workflows, and dependent management.",
-          icon: Heart,
-          color: "accent",
+          title: "Tenant Management",
+          description: "Multi-tenant architecture with complete tenant isolation, tenant creation, and management",
+          icon: Building2,
+          features: ["Tenant Creation", "Tenant Isolation", "Tenant Settings", "Domain Management"],
         },
         {
-          title: "Job Architecture",
-          description: "Define job codes, families, levels, and categories with structured job hierarchies.",
-          icon: Briefcase,
-          color: "primary",
-        },
-        {
-          title: "Employment History",
-          description: "Track employee position changes, promotions, and career progression within the organization.",
-          icon: TrendingUp,
-          color: "accent",
-        },
-        {
-          title: "Global HRIS Profiles",
-          description: "Country-specific employee fields, localized documents, and global compliance integrations.",
-          icon: Globe,
-          color: "primary",
-        },
-        {
-          title: "Skills Inventory",
-          description: "Track employee skills, proficiency levels, and verified competencies.",
-          icon: Target,
-          color: "accent",
-        },
-      ],
-    },
-    {
-      category: "Recruiting & Talent",
-      items: [
-        {
-          title: "Applicant Tracking System",
-          description: "Complete ATS with job postings, application management, interview scheduling, and offer workflows.",
+          title: "Role-Based Access Control (RBAC)",
+          description: "Comprehensive role and permission management with fine-grained access control",
           icon: Users,
-          color: "primary",
+          features: ["Role Management", "Permission Assignment", "Access Control", "Policy Enforcement"],
         },
         {
-          title: "Core HR Agent",
-          description: "AI-powered HR agent for policy guidance, form auto-filling, and document classification.",
-          icon: MessageSquare,
-          color: "accent",
-        },
-      ],
+          title: "Billing & Subscriptions",
+          description: "Subscription management, billing cycles, payment processing, and usage tracking",
+          icon: Wallet,
+          features: ["Subscription Plans", "Billing Cycles", "Payment Processing", "Usage Tracking", "Invoicing"],
+        }
+      ]
     },
     {
-      category: "Performance & Development",
-      items: [
+      id: "website",
+      name: "Website Module",
+      description: "Build beautiful websites, blogs, forums, eLearning platforms, and live chat",
+      icon: Globe,
+      color: "accent",
+      services: [
         {
-          title: "Performance Management",
-          description: "OKRs, performance reviews, 1-on-1 planning, continuous feedback, and performance cycles.",
-          icon: Target,
-          color: "primary",
+          title: "Website Builder",
+          description: "Drag-and-drop website builder with AI-powered content generation, themes, and page management",
+          icon: Code,
+          features: ["Drag-and-Drop Builder", "AI Content Generation", "Theme Library", "Page Management", "Domain/Subdomain", "Publishing"],
         },
         {
-          title: "Learning Management System",
-          description: "Course creation, learning path assignments, completion tracking, and certificate management.",
-          icon: GraduationCap,
-          color: "accent",
+          title: "Blog",
+          description: "Full-featured blogging platform with categories, tags, comments, and SEO optimization",
+          icon: FileText,
+          features: ["Post Management", "Categories & Tags", "Comments", "SEO Tools", "Media Library"],
         },
         {
-          title: "Employee Surveys",
-          description: "Survey builder, templates, employee engagement surveys, anonymous feedback, and analytics.",
-          icon: MessageSquare,
-          color: "primary",
+          title: "Forum",
+          description: "Community forum with discussions, threads, moderation, and user engagement",
+          icon: MessageCircle,
+          features: ["Discussion Threads", "User Profiles", "Moderation Tools", "Notifications", "Search"],
         },
-      ],
+        {
+          title: "eLearning",
+          description: "Complete learning management system with courses, quizzes, certificates, and progress tracking",
+          icon: BookOpen,
+          features: ["Course Creation", "Video Lessons", "Quizzes & Assessments", "Certificates", "Progress Tracking", "Student Dashboard"],
+        },
+        {
+          title: "Live Chat",
+          description: "Real-time customer support with chat widgets, agent management, and chat history",
+          icon: MessageCircle,
+          features: ["Live Chat Widget", "Agent Management", "Chat History", "File Sharing", "Chatbot Integration"],
+        }
+      ]
     },
     {
-      category: "Payroll & Finance",
-      items: [
+      id: "sales",
+      name: "Sales Module",
+      description: "Complete CRM, sales orders, point of sale, subscriptions, and rental management",
+      icon: ShoppingCart,
+      color: "primary",
+      services: [
         {
-          title: "Payroll Processing",
-          description: "US and global payroll calculations, pay cycles, deductions, tax computation, and payroll reports.",
-          icon: DollarSign,
-          color: "accent",
+          title: "CRM - Customer Relationship Management",
+          description: "Manage leads, contacts, opportunities, pipelines, and activities with AI-powered lead scoring",
+          icon: Users,
+          features: ["Lead Management", "Contact Management", "Opportunity Tracking", "Sales Pipelines", "AI Lead Scoring", "Activity Tracking"],
         },
         {
-          title: "Headcount Planning",
-          description: "Workforce projections, budget planning, hiring plans, and position management.",
-          icon: BarChart3,
-          color: "primary",
+          title: "Sales Orders",
+          description: "Quotations, sales orders, invoicing integration, and order management",
+          icon: FileText,
+          features: ["Quotations", "Sales Orders", "Order Processing", "Invoicing Integration", "Order History"],
+        },
+        {
+          title: "Point of Sale (POS)",
+          description: "Web-based POS system with payments, offline mode, and receipt printing",
+          icon: Monitor,
+          features: ["Web POS Interface", "Payment Processing", "Offline Mode", "Receipt Printing", "Inventory Sync"],
+        },
+        {
+          title: "Subscriptions",
+          description: "Recurring billing, subscriber management, subscription plans, and renewals",
+          icon: Repeat,
+          features: ["Recurring Billing", "Subscriber Management", "Subscription Plans", "Auto-Renewals", "Usage Tracking"],
+        },
+        {
+          title: "Rental Management",
+          description: "Rental contracts, deliveries, returns, scheduling, and rental tracking",
+          icon: Car,
+          features: ["Rental Contracts", "Delivery Management", "Returns Processing", "Scheduling", "Rental History"],
+        }
+      ]
+    },
+    {
+      id: "finance",
+      name: "Finance Module",
+      description: "Complete accounting, invoicing, expenses, documents, spreadsheets, e-signatures, bookkeeping, and immigration services",
+      icon: DollarSign,
+      color: "accent",
+      services: [
+        {
+          title: "Accounting",
+          description: "Full accounting system with chart of accounts, journal entries, and financial reporting",
+          icon: BarChart,
+          features: ["Chart of Accounts", "Journal Entries", "General Ledger", "Financial Reports", "Multi-Currency"],
+        },
+        {
+          title: "Bookkeeping",
+          description: "Complete bookkeeping services with transaction recording, reconciliation, and financial statements",
+          icon: FileText,
+          features: ["Transaction Recording", "Bank Reconciliation", "Financial Statements", "Trial Balance", "Month-End Closing", "Year-End Reports"],
+        },
+        {
+          title: "Immigration Services",
+          description: "Comprehensive immigration case management including H-1B, LCA, I-9, and visa processing",
+          icon: Globe,
+          features: ["H-1B Processing", "LCA Management", "I-9 Compliance", "Visa Tracking", "Case Management", "Document Management"],
+        },
+        {
+          title: "Invoicing",
+          description: "Create, send, and track invoices with payment processing and reminders",
+          icon: FileText,
+          features: ["Invoice Creation", "Payment Processing", "Payment Reminders", "Invoice Templates", "Payment Tracking"],
         },
         {
           title: "Expense Management",
-          description: "Expense claims, receipt management, policy validation, and reimbursement workflows.",
+          description: "Track expenses, receipts, approvals, and reimbursements",
           icon: Receipt,
-          color: "accent",
+          features: ["Expense Tracking", "Receipt Management", "Approval Workflows", "Reimbursements", "Expense Reports"],
         },
         {
-          title: "Corporate Cards",
-          description: "Virtual cards, spending limits, merchant controls, and card management.",
-          icon: CreditCard,
-          color: "primary",
+          title: "Documents",
+          description: "Document management with version control, sharing, and collaboration",
+          icon: Files,
+          features: ["Document Storage", "Version Control", "Sharing & Collaboration", "Document Templates", "Search"],
         },
         {
-          title: "Bill Pay",
-          description: "Vendor management, payables processing, and remittances.",
-          icon: DollarSign,
-          color: "accent",
+          title: "Spreadsheets",
+          description: "Online spreadsheet editor with formulas, charts, and collaboration",
+          icon: FileSpreadsheet,
+          features: ["Online Editor", "Formulas & Functions", "Charts & Graphs", "Collaboration", "Import/Export"],
         },
         {
-          title: "Travel Management",
-          description: "Travel requests, approvals, per diem rules, and travel expense tracking.",
-          icon: Plane,
-          color: "primary",
+          title: "E-Signatures",
+          description: "Digital signature solution for documents and contracts",
+          icon: PenTool,
+          features: ["Digital Signatures", "Document Signing", "Signature Requests", "Audit Trail", "Compliance"],
         },
-      ],
+        {
+          title: "Contract Team",
+          description: "Create, send, and sign MSA, NDA, PO, WO, SOW with AI quick-read and e-signature",
+          icon: FileText,
+          features: ["Create Contracts", "Send for Signature", "Receive & Sign", "AI Summary", "Contract Dashboard"],
+        }
+      ]
     },
     {
-      category: "Time & Operations",
-      items: [
+      id: "inventory",
+      name: "Inventory & Manufacturing",
+      description: "Complete inventory management, manufacturing, PLM, procurement, maintenance, and quality control",
+      icon: Package,
+      color: "primary",
+      services: [
         {
-          title: "Time & Attendance",
-          description: "Clock-in/out, schedules, overtime rules, and shift management.",
-          icon: Clock,
-          color: "accent",
+          title: "Inventory Management",
+          description: "Warehouse management, stock tracking, replenishment, barcode scanning, and stock movements",
+          icon: Package,
+          features: ["Warehouse Management", "Stock Tracking", "Replenishment Rules", "Barcode Scanning", "Stock Movements", "Multi-Location"],
         },
+        {
+          title: "Manufacturing",
+          description: "MRP, MES, production orders, BOMs, workcenters, and production planning",
+          icon: Factory,
+          features: ["MRP Planning", "Production Orders", "BOM Management", "Workcenters", "Production Tracking", "Quality Control"],
+        },
+        {
+          title: "Product Lifecycle Management (PLM)",
+          description: "Product lifecycle, version control, engineering changes, and product data management",
+          icon: Layers,
+          features: ["Product Lifecycle", "Version Control", "Engineering Changes", "Product Data Management", "Documentation"],
+        },
+        {
+          title: "Procurement",
+          description: "RFQs, purchase orders, vendor management, and procurement workflows",
+          icon: ShoppingCart,
+          features: ["RFQ Management", "Purchase Orders", "Vendor Management", "Procurement Workflows", "Approval Processes"],
+        },
+        {
+          title: "Maintenance",
+          description: "Equipment maintenance, preventive scheduling, work orders, and maintenance history",
+          icon: Wrench,
+          features: ["Equipment Management", "Preventive Maintenance", "Work Orders", "Maintenance History", "Scheduling"],
+        },
+        {
+          title: "Quality Control",
+          description: "Quality control, inspections, alerts, worksheets, and quality assurance",
+          icon: CheckSquare,
+          features: ["Quality Inspections", "Quality Alerts", "Inspection Worksheets", "Quality Reports", "Compliance Tracking"],
+        }
+      ]
+    },
+    {
+      id: "hr",
+      name: "Human Resources",
+      description: "Complete HR management including employees, recruitment, time off, appraisals, referrals, and fleet",
+      icon: UserCircle,
+      color: "accent",
+      services: [
+        {
+          title: "Employee Management",
+          description: "Employee master data, skills, documents, organizational chart, and attendance tracking",
+          icon: Users,
+          features: ["Employee Profiles", "Skills Management", "Document Management", "Org Chart", "Attendance Tracking", "Employee Directory"],
+        },
+        {
+          title: "Recruitment",
+          description: "Job postings, applications, pipeline, interviews, scheduling, and candidate management",
+          icon: Search,
+          features: ["Job Postings", "Application Management", "Recruitment Pipeline", "Interview Scheduling", "Candidate Tracking"],
+        },
+        {
+          title: "Time Off Management",
+          description: "Leave management, PTO requests, accrual plans, approvals, and leave calendar",
+          icon: CalendarDays,
+          features: ["Leave Requests", "PTO Management", "Accrual Plans", "Approval Workflows", "Leave Calendar", "Balance Tracking"],
+        },
+        {
+          title: "Performance Appraisals",
+          description: "Performance evaluations, surveys, feedback, 360 reviews, and goal tracking",
+          icon: Target,
+          features: ["Performance Reviews", "360 Feedback", "Goal Setting", "Performance Surveys", "Review Cycles"],
+        },
+        {
+          title: "Employee Referrals",
+          description: "Employee referral program with gamification, rewards, and tracking",
+          icon: UserPlus,
+          features: ["Referral Program", "Gamification", "Rewards Management", "Referral Tracking", "Analytics"],
+        },
+        {
+          title: "Fleet Management",
+          description: "Fleet management, vehicles, contracts, costs, and reporting",
+          icon: Car,
+          features: ["Vehicle Management", "Fleet Contracts", "Cost Tracking", "Maintenance Scheduling", "Fleet Reports"],
+        }
+      ]
+    },
+    {
+      id: "marketing",
+      name: "Marketing Module",
+      description: "Marketing automation, email marketing, SMS campaigns, social media, events, and surveys",
+      icon: Megaphone,
+      color: "primary",
+      services: [
+        {
+          title: "Marketing Automation",
+          description: "Workflows, customer journeys, automation rules, and campaign management",
+          icon: Zap,
+          features: ["Marketing Workflows", "Customer Journeys", "Automation Rules", "Campaign Management", "Event Triggers"],
+        },
+        {
+          title: "Email Marketing",
+          description: "Email campaigns, templates, segmentation, analytics, and mailing lists",
+          icon: Mail,
+          features: ["Email Campaigns", "Template Builder", "List Segmentation", "Email Analytics", "A/B Testing", "Mailing Lists"],
+        },
+        {
+          title: "SMS Marketing",
+          description: "SMS campaigns, scheduling, link tracking, and credit management",
+          icon: MessageSquare,
+          features: ["SMS Campaigns", "Message Scheduling", "Link Tracking", "Credit Management", "Delivery Reports"],
+        },
+        {
+          title: "Social Media Marketing",
+          description: "Social media management, content scheduling, and push notifications",
+          icon: MessageCircle,
+          features: ["Social Media Management", "Content Scheduling", "Push Notifications", "Social Analytics"],
+        },
+        {
+          title: "Event Management",
+          description: "Event management, ticket sales, sponsors, speakers, and registrations",
+          icon: Calendar,
+          features: ["Event Creation", "Ticket Sales", "Sponsor Management", "Speaker Management", "Registration Management"],
+        },
+        {
+          title: "Surveys",
+          description: "Survey creation, live sessions, analytics, and response management",
+          icon: ClipboardCheck,
+          features: ["Survey Builder", "Live Sessions", "Response Analytics", "Question Types", "Distribution"],
+        }
+      ]
+    },
+    {
+      id: "services",
+      name: "Services Module",
+      description: "Project management, timesheets, field service, helpdesk, planning, and appointments",
+      icon: Briefcase,
+      color: "accent",
+      services: [
         {
           title: "Project Management",
-          description: "Project creation, task management, sprint boards, and milestone tracking.",
-          icon: Briefcase,
-          color: "primary",
+          description: "Tasks, Kanban, Gantt charts, milestones, profitability, and team collaboration",
+          icon: Kanban,
+          features: ["Task Management", "Kanban Boards", "Gantt Charts", "Milestones", "Profitability Analysis", "Team Collaboration"],
         },
-      ],
-    },
-    {
-      category: "IT & Support",
-      items: [
         {
-          title: "ITSM Agent",
-          description: "IT service requests, identity requests, and approval flows.",
-          icon: Settings,
-          color: "accent",
+          title: "Timesheets",
+          description: "Time tracking, invoicing, validation, reporting, and billable hours",
+          icon: Timer,
+          features: ["Time Tracking", "Timer Function", "Billable Hours", "Timesheet Validation", "Reporting", "Overtime Tracking"],
         },
-      ],
-    },
-    {
-      category: "Sales & CRM",
-      items: [
         {
-          title: "CRM Agent",
-          description: "CRM contacts, lead scoring, and opportunity management.",
-          icon: Users,
-          color: "primary",
+          title: "Field Service",
+          description: "Onsite work management, scheduling, worksheets, mobile app, and invoicing",
+          icon: MapPin,
+          features: ["Onsite Management", "Scheduling", "Worksheets", "Mobile App", "Invoicing", "Map View"],
         },
-      ],
-    },
-    {
-      category: "Global Workforce",
-      items: [
         {
-          title: "Global Contractors & EOR",
-          description: "Contractor records, EOR workflows, and global contractor payouts.",
-          icon: Globe,
-          color: "accent",
+          title: "Helpdesk",
+          description: "Ticketing system, SLA management, automation, multi-channel support, and knowledge base",
+          icon: Headphones,
+          features: ["Ticket Management", "SLA Rules", "Automation", "Multi-Channel", "Knowledge Base", "Customer Portal"],
         },
-      ],
+        {
+          title: "Planning",
+          description: "Shift scheduling, resource management, Gantt charts, and conflict detection",
+          icon: CalendarDays,
+          features: ["Shift Scheduling", "Resource Management", "Gantt Planning", "Conflict Detection", "Shift Swapping"],
+        },
+        {
+          title: "Appointments",
+          description: "Self-service scheduling, calendar integration, video conferencing, and reminders",
+          icon: Calendar,
+          features: ["Self-Service Booking", "Calendar Integration", "Video Conferencing", "Automated Reminders", "Resource Scheduling"],
+        }
+      ]
     },
-  ];
-
-  const portals = [
     {
-      name: "Admin Portal",
-      description: "Manage tenants, users, and system configuration",
-      icon: Shield,
-      href: "/login",
+      id: "productivity",
+      name: "Productivity Module",
+      description: "Chat, approvals, IoT, VoIP, and knowledge base for enhanced productivity",
+      icon: Zap,
       color: "primary",
-      port: 3000,
+      services: [
+        {
+          title: "Discuss - Team Chat",
+          description: "Direct messaging, channels, video calls, voice calls, WhatsApp integration, and notifications",
+          icon: MessageSquare,
+          features: ["Direct Messaging", "Channels", "Video Calls", "Voice Calls", "WhatsApp Integration", "Notifications"],
+        },
+        {
+          title: "Approvals",
+          description: "Centralized approval workflows, request types, multi-approver, and approval tracking",
+          icon: CheckSquare,
+          features: ["Approval Workflows", "Request Types", "Multi-Approver", "Approval Tracking", "Custom Fields"],
+        },
+        {
+          title: "IoT - Internet of Things",
+          description: "Device management, integration, quality checks, and measurement tracking",
+          icon: Settings,
+          features: ["Device Management", "IoT Box Integration", "Quality Checks", "Measurement Tracking", "Device Operations"],
+        },
+        {
+          title: "VoIP - Voice over IP",
+          description: "Voice calls, CRM integration, call queue, call history, and user settings",
+          icon: Phone,
+          features: ["Voice Calls", "CRM Integration", "Call Queue", "Call History", "User Settings", "Call Recording"],
+        },
+        {
+          title: "Knowledge Base",
+          description: "Knowledge base, wiki, collaboration, access control, and revision history",
+          icon: BookOpen,
+          features: ["Article Management", "Wiki System", "Collaboration", "Access Control", "Revision History", "Search"],
+        }
+      ]
     },
     {
-      name: "Employer Portal",
-      description: "HR management, compliance, and employee oversight",
-      icon: Building2,
-      href: "http://localhost:3001/login",
-      color: "secondary",
-      port: 3001,
-    },
-    {
-      name: "Employee Portal",
-      description: "Self-service access to documents and information",
-      icon: UserCircle,
-      href: "http://localhost:3002/login",
+      id: "customization",
+      name: "Customization Module",
+      description: "No-code app builder with Studio for customizing your XeroBookz experience",
+      icon: Code,
       color: "accent",
-      port: 3002,
-    },
+      services: [
+        {
+          title: "Studio - No-Code Builder",
+          description: "Custom fields, views, apps, workflows, business rules, and menu editor - no programming needed",
+          icon: Cog,
+          features: ["Custom Apps", "Custom Fields", "Custom Views", "Workflow Builder", "Business Rules", "Menu Editor", "Document Templates"],
+        }
+      ]
+    }
   ];
 
-  const handlePortalClick = (portal: typeof portals[0]) => {
-    if (portal.href.startsWith("http")) {
-      window.location.href = portal.href;
-    } else {
-      router.push(portal.href);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Minimal Navigation */}
+      {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrollY > 50 
           ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-grey-200' 
           : 'bg-white/80 backdrop-blur-md border-b border-grey-200'
       }`}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <Link href="/" className="z-10 relative">
               <XeroBookzLogo size="lg" />
             </Link>
-            <div className="flex gap-3">
+            <div className="flex gap-3 sm:gap-4 z-10 relative items-center">
+              <Link
+                href="/about"
+                className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors shrink-0"
+              >
+                About Us
+              </Link>
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push("/signup");
+                }}
+                className="flex items-center gap-2"
+              >
+                Sign Up
+              </Button>
               <div className="relative" ref={dropdownRef}>
                 <Button
-                  variant="ghost"
-                  onClick={() => setIsSignInDropdownOpen(!isSignInDropdownOpen)}
+                  variant="outline"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsSignInDropdownOpen((prev) => !prev);
+                  }}
                   className="flex items-center gap-2"
                 >
                   Sign In
-                  <ChevronDown 
-                    size={16} 
-                    className={`transition-transform duration-200 ${isSignInDropdownOpen ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronDown size={16} className={isSignInDropdownOpen ? "rotate-180" : ""} />
                 </Button>
-                
                 {isSignInDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white border border-grey-200 rounded-xl shadow-elevated z-50 overflow-hidden">
-                    <div className="p-2">
-                      {portals.map((portal) => {
-                        const IconComponent = portal.icon;
-                        return (
-                          <button
-                            key={portal.name}
-                            onClick={() => {
-                              setIsSignInDropdownOpen(false);
-                              handlePortalClick(portal);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-grey-50 transition-colors text-left group"
-                          >
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                              portal.color === "primary" 
-                                ? "bg-primary-50 group-hover:bg-primary-100" 
-                                : portal.color === "secondary"
-                                ? "bg-secondary-50 group-hover:bg-secondary-100"
-                                : "bg-accent-50 group-hover:bg-accent-100"
-                            }`}>
-                              <IconComponent
-                                size={20}
-                                strokeWidth={2}
-                                className={
-                                  portal.color === "primary" 
-                                    ? "text-primary-600" 
-                                    : portal.color === "secondary"
-                                    ? "text-secondary-600"
-                                    : "text-accent-600"
-                                }
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-secondary-800 text-sm">
-                                {portal.name}
-                              </div>
-                              <div className="text-xs text-grey-600 truncate">
-                                {portal.description}
-                              </div>
-                            </div>
-                            <ArrowRight 
-                              size={16} 
-                              className="text-grey-400 group-hover:text-primary-600 transition-colors flex-shrink-0"
-                            />
-                          </button>
-                        );
-                      })}
-                    </div>
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg border border-grey-200 bg-white shadow-lg py-1 z-50">
+                    <Link
+                      href="/login"
+                      className="block px-4 py-2 text-sm text-grey-700 hover:bg-grey-50"
+                      onClick={() => setIsSignInDropdownOpen(false)}
+                    >
+                      Company Admin
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="block px-4 py-2 text-sm text-grey-700 hover:bg-grey-50"
+                      onClick={() => setIsSignInDropdownOpen(false)}
+                    >
+                      Employee Dashboard
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="block px-4 py-2 text-sm text-grey-700 hover:bg-grey-50"
+                      onClick={() => setIsSignInDropdownOpen(false)}
+                    >
+                      Contract Team
+                    </Link>
                   </div>
                 )}
               </div>
@@ -404,103 +558,95 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Section with Logo and Company Name */}
-      <section className="pt-32 pb-32 px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-accent-50 relative overflow-hidden">
-        {/* Animated decorative background elements */}
+      {/* Hero Section */}
+      <section className="pt-24 sm:pt-28 md:pt-32 pb-16 sm:pb-24 md:pb-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-accent-50 relative overflow-hidden">
+        {/* Decorative background - pointer-events-none ensures it doesn't block clicks */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="absolute top-20 left-10 w-72 h-72 bg-primary-200/20 rounded-full blur-3xl animate-float"
-            style={{ 
-              transform: `translateY(${scrollY * 0.3}px)`,
-              transition: 'transform 0.1s ease-out'
-            }}
-          ></div>
-          <div 
-            className="absolute bottom-20 right-10 w-96 h-96 bg-accent-200/20 rounded-full blur-3xl animate-float"
-            style={{ 
-              transform: `translateY(${scrollY * -0.2}px)`,
-              transition: 'transform 0.1s ease-out',
-              animationDelay: '1s'
-            }}
-          ></div>
-          <div 
-            className="absolute top-1/2 left-1/2 w-64 h-64 bg-primary-100/10 rounded-full blur-3xl animate-pulse-slow"
-            style={{ 
-              transform: `translate(${-50 + scrollY * 0.1}%, ${-50 + scrollY * 0.15}%)`,
-              transition: 'transform 0.1s ease-out'
-            }}
-          ></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-200/20 rounded-full blur-3xl animate-float" style={{ transform: `translateY(${scrollY * 0.3}px)` }}></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-200/20 rounded-full blur-3xl animate-float" style={{ transform: `translateY(${scrollY * -0.2}px)`, animationDelay: '1s' }}></div>
         </div>
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-12">
             <div className="flex justify-center mb-8 animate-fade-in">
-              <Link href="/">
+              <Link href="/" className="relative z-10">
                 <XeroBookzLogo size="2xl" />
               </Link>
             </div>
             
-            {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 text-primary-700 text-sm font-medium mb-6 animate-fade-in hover-lift">
               <Sparkles size={16} className="animate-pulse-slow" />
-              <span>AI-Powered Automation</span>
+              <span>AI-Powered Enterprise Platform</span>
             </div>
             
-            <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-secondary-900 mb-6 leading-tight animate-fade-in-up bg-gradient-to-r from-primary-600 via-secondary-700 to-accent-600 bg-clip-text text-transparent animate-gradient">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-secondary-900 mb-4 sm:mb-6 leading-tight animate-fade-in-up bg-gradient-to-r from-primary-600 via-secondary-700 to-accent-600 bg-clip-text text-transparent px-4">
               XeroBookz
             </h1>
-            <p className="text-3xl md:text-4xl font-semibold text-secondary-700 mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              Enterprise HR & Compliance Platform
+            <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-secondary-700 mb-4 sm:mb-6 animate-fade-in-up px-4" style={{ animationDelay: '0.1s' }}>
+              Complete Business Management Suite
             </p>
-            <p className="text-xl md:text-2xl text-grey-600 mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              A comprehensive SaaS platform for Immigration & HR Compliance with full enterprise HRIS, Payroll, Performance, Recruiting, and Global HR capabilities powered by AI.
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-grey-600 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up px-4" style={{ animationDelay: '0.2s' }}>
+              Everything you need to run your business - from CRM and Sales to HR, Finance, Inventory, Manufacturing, Marketing, Projects, and more. All in one integrated platform.
             </p>
             
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12 max-w-4xl mx-auto animate-fade-in-up px-4" style={{ animationDelay: '0.3s' }}>
               {[
-                { value: "26+", label: "Microservices" },
-                { value: "AI", label: "Powered" },
-                { value: "100%", label: "Compliant" },
-                { value: "24/7", label: "Support" },
+                { value: "53", label: "Services" },
+                { value: "10", label: "Modules" },
+                { value: "250+", label: "Features" },
+                { value: "100%", label: "Integrated" },
               ].map((stat, index) => (
-                <div 
-                  key={index}
-                  className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-grey-200/50 hover-lift hover-glow transition-all duration-300"
-                  data-reveal-id={`stat-${index}`}
-                >
-                  <div className={`text-3xl md:text-4xl font-bold text-primary-600 mb-1 transition-all duration-300 hover:scale-110 inline-block ${revealedElements.has(`stat-${index}`) ? 'scroll-reveal-scale revealed' : 'scroll-reveal-scale'}`}>
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-grey-600">{stat.label}</div>
+                <div key={index} className="text-center p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/50 backdrop-blur-sm border border-grey-200/50 hover-lift hover-glow transition-all duration-300">
+                  <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-600 mb-1">{stat.value}</div>
+                  <div className="text-xs sm:text-sm text-grey-600">{stat.label}</div>
                 </div>
               ))}
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in-up px-4" style={{ animationDelay: '0.4s' }}>
               <Button
                 variant="gradient"
                 size="lg"
-                onClick={() => {
-                  document.getElementById("portals")?.scrollIntoView({ behavior: "smooth" });
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const element = document.getElementById("what-we-offer");
+                  if (element) {
+                    element.scrollIntoView({ behavior: "smooth" });
+                  }
                 }}
-                className="group hover-lift hover-glow relative overflow-hidden"
+                className="group hover-lift hover-glow relative overflow-hidden w-full sm:w-auto"
               >
-                <span className="relative z-10 flex items-center">
-                  Get Started
+                <span className="relative z-10 flex items-center justify-center">
+                  <span className="hidden sm:inline">Explore Everything We Offer</span>
+                  <span className="sm:hidden">Explore Features</span>
                   <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </span>
-                <div className="absolute inset-0 animate-shimmer opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </Button>
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => {
-                  document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push("/signup");
                 }}
-                className="group hover-lift transition-all duration-300 hover:border-primary-500 hover:bg-primary-50"
+                className="group hover-lift w-full sm:w-auto"
               >
-                Explore Features
+                Get Started
+                <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push("/login");
+                }}
+                className="group hover-lift w-full sm:w-auto"
+              >
+                Sign In
                 <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
@@ -508,549 +654,298 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI Features Highlight Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-700 py-20 px-6 lg:px-8 text-white relative overflow-hidden animate-gradient">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}></div>
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium mb-6">
-              <Brain size={16} />
-              <span>Powered by AI</span>
+      {/* WHAT WE OFFER - COMPREHENSIVE SECTION */}
+      <section id="what-we-offer" className="py-12 sm:py-16 md:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-6">
+              <Star size={16} />
+              <span>Complete Business Suite</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Automate Manual Tasks with AI
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-secondary-800 mb-4 px-4">
+              What We Offer
             </h2>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Our AI integration automates document processing, form filling, and data extraction to save you hours of manual work.
+            <p className="text-lg sm:text-xl md:text-2xl text-grey-600 max-w-4xl mx-auto leading-relaxed px-4">
+              Everything you need to run your entire business. From customer management to manufacturing, from HR to finance - all integrated, all powerful, all in one place.
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { icon: FileCheck, title: "Document Processing", desc: "Auto-extract data from I-9 forms, passports, visas, and receipts with AI-powered OCR." },
-              { icon: Zap, title: "Form Auto-Fill", desc: "Automatically fill onboarding forms, timesheets, and expense claims using AI intelligence." },
-              { icon: Target, title: "Smart Suggestions", desc: "Get AI-powered SOC code predictions, autocomplete, and personalized recommendations." },
-            ].map((feature, index) => {
-              const IconComponent = feature.icon;
+
+          {/* Modules Grid */}
+          <div className="space-y-6 sm:space-y-8 md:space-y-12">
+            {allModules.map((module, moduleIndex) => {
+              const IconComponent = module.icon;
+              const isExpanded = expandedModules.has(module.id);
+
               return (
-                <Card 
-                  key={index}
-                  variant="glass" 
-                  className="bg-white/10 backdrop-blur-md border-white/20 text-white p-6 hover-lift transition-all duration-300 hover:bg-white/20 hover:scale-105"
-                  data-reveal-id={`ai-feature-${index}`}
+                <div
+                  key={module.id}
+                  id={`module-${module.id}`}
+                  className="bg-white rounded-xl sm:rounded-2xl border-2 border-grey-200 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 w-full hover:border-primary-300"
                 >
-                  <div className={`w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-4 transition-all duration-300 hover:scale-110 hover:rotate-6 ${revealedElements.has(`ai-feature-${index}`) ? 'scroll-reveal-scale revealed' : 'scroll-reveal-scale'}`}>
-                    <IconComponent size={24} className="text-white" />
+                  {/* Module Header - Fully Clickable */}
+                  <div
+                    className="p-4 sm:p-6 lg:p-8 cursor-pointer hover:bg-grey-50/50 active:bg-grey-100 transition-all duration-200"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleModule(module.id);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleModule(module.id);
+                      }
+                    }}
+                    aria-expanded={isExpanded}
+                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${module.name} module`}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                      {/* Module Icon Preview */}
+                      <div className="relative w-full sm:w-32 h-32 sm:h-32 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-primary-50 via-white to-accent-50 flex items-center justify-center border-2 border-grey-200 shadow-sm">
+                        <div className={`w-20 h-20 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-lg transform transition-all duration-300 hover:scale-110 hover:shadow-xl ${
+                          module.color === "primary" ? "bg-gradient-to-br from-primary-500 to-primary-600" : "bg-gradient-to-br from-accent-500 to-accent-600"
+                        }`}>
+                          <IconComponent size={40} className="sm:w-8 sm:h-8 text-white drop-shadow-md" />
+                        </div>
+                      </div>
+
+                      <div className="flex-1 w-full">
+                        <div className="flex items-start sm:items-center justify-between mb-3 gap-3">
+                          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-secondary-800 break-words leading-tight">{module.name}</h3>
+                          </div>
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-grey-100 transition-colors group">
+                            <span className="text-xs sm:text-sm text-grey-600 hidden sm:inline font-medium">
+                              {isExpanded ? 'Collapse' : 'Expand'}
+                            </span>
+                            <ChevronDown
+                              size={20}
+                              className={`text-primary-600 transition-all duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''} group-hover:scale-110`}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-base sm:text-lg text-grey-600 mb-4 leading-relaxed">{module.description}</p>
+                        <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-50 text-primary-700 font-medium">
+                            <Package size={14} className="sm:w-4 sm:h-4" />
+                            {module.services.length} {module.services.length === 1 ? 'Service' : 'Services'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-white/80 text-sm">{feature.desc}</p>
-                </Card>
+
+                  {/* Expanded Services */}
+                  {isExpanded && (
+                    <div className="border-t-2 border-grey-200 bg-gradient-to-b from-grey-50/30 via-white to-white overflow-hidden">
+                      <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
+                        <div className="mb-4 sm:mb-6 pb-4 border-b border-grey-200">
+                          <h4 className="text-lg sm:text-xl font-semibold text-secondary-800 mb-1 flex items-center gap-2">
+                            <Package size={20} className="text-primary-600" />
+                            Available Services
+                          </h4>
+                          <p className="text-sm text-grey-600">
+                            Explore {module.services.length} {module.services.length === 1 ? 'service' : 'services'} in this module
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                          {module.services.map((service, serviceIndex) => {
+                            const ServiceIcon = service.icon;
+                            return (
+                              <Card
+                                key={`${module.id}-service-${serviceIndex}`}
+                                variant="floating"
+                                hover
+                                className="p-6 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2 border-transparent hover:border-primary-200 h-full flex flex-col"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleFeatureClick(service.title);
+                                }}
+                              >
+                                {/* Service Icon Preview */}
+                                <div className="relative w-full h-32 rounded-lg overflow-hidden mb-4 bg-gradient-to-br from-primary-50 via-white to-accent-50 flex items-center justify-center border border-grey-200 shadow-sm">
+                                  <div className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-md transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${
+                                    module.color === "primary" ? "bg-gradient-to-br from-primary-500 to-primary-600" : "bg-gradient-to-br from-accent-500 to-accent-600"
+                                  }`}>
+                                    <ServiceIcon size={28} className="text-white drop-shadow-sm" />
+                                  </div>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <h4 className="text-base sm:text-lg font-semibold text-secondary-800 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
+                                    {service.title}
+                                  </h4>
+                                  <p className="text-xs sm:text-sm text-grey-600 mb-3 leading-relaxed line-clamp-3">
+                                    {service.description}
+                                  </p>
+                                </div>
+
+                                {/* Features List */}
+                                <div className="space-y-2 mb-4">
+                                  {service.features.slice(0, 3).map((feature, featureIndex) => (
+                                    <div key={featureIndex} className="flex items-start gap-2 text-xs text-grey-600">
+                                      <CheckCircle2 size={14} className="text-primary-600 flex-shrink-0 mt-0.5" />
+                                      <span className="leading-relaxed">{feature}</span>
+                                    </div>
+                                  ))}
+                                  {service.features.length > 3 && (
+                                    <div className="text-xs text-primary-600 font-medium mt-2 flex items-center gap-1">
+                                      <span>+{service.features.length - 3} more features</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="mt-auto pt-3 border-t border-grey-200 flex items-center justify-between">
+                                  <span className="text-xs text-grey-500 font-medium">Click to explore</span>
+                                  <ArrowRight size={16} className="text-primary-600 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
-        </div>
-      </section>
 
-      {/* Portal Selection Section */}
-      <section id="portals" className="relative max-w-7xl mx-auto px-6 lg:px-8 py-24 bg-white">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-6">
-            <Shield size={16} />
-            <span>Secure Access</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-secondary-800 mb-4">
-            Choose Your Portal
-          </h2>
-          <p className="text-xl text-grey-600 max-w-3xl mx-auto leading-relaxed">
-            Access the right tools for your role. Each portal is tailored to specific user needs and responsibilities.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {portals.map((portal, index) => {
-            const IconComponent = portal.icon;
-
-            return (
-              <Card
-                key={portal.name}
-                variant="floating"
-                hover
-                className="text-center p-8 cursor-pointer group hover-lift transition-all duration-300 hover:scale-105"
-                onClick={() => handlePortalClick(portal)}
-                data-reveal-id={`portal-${index}`}
-              >
-                <div className="flex justify-center mb-6">
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${
-                    portal.color === "primary" 
-                      ? "bg-primary-50 group-hover:bg-primary-100 group-hover:shadow-lg" 
-                      : portal.color === "secondary"
-                      ? "bg-secondary-50 group-hover:bg-secondary-100 group-hover:shadow-lg"
-                      : "bg-accent-50 group-hover:bg-accent-100 group-hover:shadow-lg"
-                  }`}>
-                    <IconComponent
-                      size={40}
-                      strokeWidth={2}
-                      className={`transition-all duration-300 group-hover:scale-110 ${
-                        portal.color === "primary" 
-                          ? "text-primary-600" 
-                          : portal.color === "secondary"
-                          ? "text-secondary-600"
-                          : "text-accent-600"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                <h3 className="text-2xl font-semibold text-secondary-800 mb-3">
-                  {portal.name}
-                </h3>
-                <p className="text-grey-600 mb-8 leading-relaxed">
-                  {portal.description}
-                </p>
-
-                <Button
-                  variant={portal.color === "primary" ? "default" : portal.color === "secondary" ? "secondary" : "accent"}
-                  className="w-full"
-                  size="lg"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePortalClick(portal);
-                  }}
-                >
-                  Access {portal.name}
-                </Button>
-
-                <p className="text-xs text-grey-500 mt-4">Port: {portal.port}</p>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Core Compliance Features Section */}
-      <section className="bg-gradient-to-b from-white to-grey-50 py-24">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className={`text-center mb-16 scroll-reveal ${revealedElements.has('core-features-header') ? 'revealed' : ''}`} data-reveal-id="core-features-header">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-50 text-accent-700 text-sm font-medium mb-6">
-              <Award size={16} />
-              <span>Core Features</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-secondary-800 mb-4">
-              Core Compliance Features
-            </h2>
-            <p className="text-xl text-grey-600 max-w-3xl mx-auto leading-relaxed">
-              Essential tools for HR compliance and immigration management.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                variant="floating"
-                hover
-                className="p-8 group cursor-pointer transition-all duration-300 hover:scale-[1.05] hover-lift"
-                onClick={() => handleFeatureClick(feature.title)}
-                data-reveal-id={`core-feature-${index}`}
-              >
-                <div className="flex flex-col h-full">
-                  <div className="w-16 h-16 rounded-2xl bg-primary-50 group-hover:bg-primary-100 group-hover:shadow-lg flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    <Icon
-                      name={feature.icon}
-                      size={32}
-                      variant="primary"
-                      className="text-primary-600 transition-transform duration-300 group-hover:scale-110"
-                    />
-                  </div>
-                  <h3 className="text-xl font-semibold text-secondary-800 mb-3 group-hover:text-primary-600 transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-grey-600 text-sm leading-relaxed flex-grow">{feature.description}</p>
-                  <div className="mt-4 flex items-center text-primary-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-2">
-                    Learn more →
-                  </div>
-                </div>
+          {/* Summary Stats */}
+          <div className="mt-12 sm:mt-16 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {[
+              { label: "Total Services", value: 53 },
+              { label: "Modules", value: 10 },
+              { label: "Features", value: "250+" },
+              { label: "Integrations", value: "Unlimited" },
+            ].map((stat, index) => (
+              <Card key={index} variant="floating" className="p-6 text-center">
+                <div className="text-4xl font-bold text-primary-600 mb-2">{stat.value}</div>
+                <div className="text-sm text-grey-600">{stat.label}</div>
               </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Enterprise Features Section */}
-      <section id="features" className="bg-white py-24">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className={`text-center mb-20 scroll-reveal ${revealedElements.has('enterprise-features-header') ? 'revealed' : ''}`} data-reveal-id="enterprise-features-header">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-6">
-              <Star size={16} />
-              <span>Enterprise Grade</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-secondary-800 mb-4">
-              Enterprise HRIS & HR Features
-            </h2>
-            <p className="text-xl text-grey-600 max-w-3xl mx-auto leading-relaxed">
-              Comprehensive enterprise-grade HR, Payroll, Performance, and Talent Management capabilities.
-            </p>
+      {/* Portals – access everything */}
+      <section id="portals" className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-24 bg-gradient-to-b from-white to-grey-50">
+        <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-6">
+            <Rocket size={16} />
+            <span>Access Your Portal</span>
           </div>
-
-          {enterpriseFeatures.map((category, categoryIndex) => {
-            // Check if this is one of the single-item categories that should be grouped
-            const singleItemCategories = ["IT & Support", "Sales & CRM", "Global Workforce"];
-            const isSingleItemCategory = singleItemCategories.includes(category.category) && category.items.length === 1;
-            
-            // Check if we're at the start of the single-item categories group
-            const isFirstSingleItem = categoryIndex > 0 && 
-              enterpriseFeatures[categoryIndex - 1].category !== "IT & Support" &&
-              category.category === "IT & Support";
-            
-            // Check if we should skip rendering this category individually (it will be in the grouped section)
-            const shouldSkip = isSingleItemCategory && !isFirstSingleItem;
-            
-            if (shouldSkip) {
-              return null;
-            }
-            
-            // If this is the first single-item category, render all three together
-            if (isFirstSingleItem) {
-              const singleItemCats = enterpriseFeatures.filter(cat => 
-                singleItemCategories.includes(cat.category) && cat.items.length === 1
-              );
-              
-              return (
-                <div key={categoryIndex} className="mb-20 last:mb-0">
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="h-px flex-1 bg-grey-200"></div>
-                    <h3 className="text-2xl md:text-3xl font-semibold text-secondary-800 px-4">
-                      Enterprise Solutions
-                    </h3>
-                    <div className="h-px flex-1 bg-grey-200"></div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {singleItemCats.map((singleCat, singleCatIndex) => 
-                      singleCat.items.map((item, itemIndex) => {
-                        const IconComponent = item.icon;
-                        return (
-                          <Card
-                            key={`${singleCatIndex}-${itemIndex}`}
-                            variant="floating"
-                            hover
-                            className="p-8 group cursor-pointer transition-all duration-300 hover:scale-[1.05] hover-lift"
-                            onClick={() => handleFeatureClick(item.title)}
-                            data-reveal-id={`enterprise-feature-${singleCatIndex}-${itemIndex}`}
-                          >
-                            <div className="flex flex-col h-full">
-                              <div className="mb-3">
-                                <p className="text-sm font-medium text-grey-500 mb-2">{singleCat.category}</p>
-                              </div>
-                              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${
-                                item.color === "primary" 
-                                  ? "bg-primary-50 group-hover:bg-primary-100 group-hover:shadow-lg" 
-                                  : "bg-accent-50 group-hover:bg-accent-100 group-hover:shadow-lg"
-                              }`}>
-                                <IconComponent
-                                  size={32}
-                                  strokeWidth={2}
-                                  className={`transition-transform duration-300 group-hover:scale-110 ${item.color === "primary" ? "text-primary-600" : "text-accent-600"}`}
-                                />
-                              </div>
-                              <h4 className="text-xl font-semibold text-secondary-800 mb-3 group-hover:text-primary-600 transition-colors">
-                                {item.title}
-                              </h4>
-                              <p className="text-grey-600 text-sm leading-relaxed flex-grow">
-                                {item.description}
-                              </p>
-                              <div className="mt-4 flex items-center text-primary-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-2">
-                                Learn more →
-                              </div>
-                            </div>
-                          </Card>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              );
-            }
-            
-            // Regular category rendering
-            return (
-              <div key={categoryIndex} className="mb-20 last:mb-0">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="h-px flex-1 bg-grey-200"></div>
-                  <h3 className="text-2xl md:text-3xl font-semibold text-secondary-800 px-4">
-                    {category.category}
-                  </h3>
-                  <div className="h-px flex-1 bg-grey-200"></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {category.items.map((item, itemIndex) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <Card
-                        key={itemIndex}
-                        variant="floating"
-                        hover
-                        className="p-8 group cursor-pointer transition-all duration-300 hover:scale-[1.05] hover-lift"
-                        onClick={() => handleFeatureClick(item.title)}
-                        data-reveal-id={`enterprise-${categoryIndex}-${itemIndex}`}
-                      >
-                        <div className="flex flex-col h-full">
-                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${
-                            item.color === "primary" 
-                              ? "bg-primary-50 group-hover:bg-primary-100 group-hover:shadow-lg" 
-                              : "bg-accent-50 group-hover:bg-accent-100 group-hover:shadow-lg"
-                          }`}>
-                            <IconComponent
-                              size={32}
-                              strokeWidth={2}
-                              className={`transition-transform duration-300 group-hover:scale-110 ${item.color === "primary" ? "text-primary-600" : "text-accent-600"}`}
-                            />
-                          </div>
-                          <h4 className="text-xl font-semibold text-secondary-800 mb-3 group-hover:text-primary-600 transition-colors">
-                            {item.title}
-                          </h4>
-                          <p className="text-grey-600 text-sm leading-relaxed flex-grow">
-                            {item.description}
-                          </p>
-                          <div className="mt-4 flex items-center text-primary-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-2">
-                            Learn more →
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Key Capabilities */}
-      <section className="max-w-7xl mx-auto px-6 lg:px-8 py-24 bg-gradient-to-b from-grey-50 to-white">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary-50 text-secondary-700 text-sm font-medium mb-6">
-            <Zap size={16} />
-            <span>Key Capabilities</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-secondary-800 mb-4">
-            Key Capabilities
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-secondary-800 mb-4 px-4">
+            One Platform, Every Role
           </h2>
-          <p className="text-xl text-grey-600 max-w-3xl mx-auto leading-relaxed">
-            Powerful tools to streamline your HR operations and ensure compliance.
+          <p className="text-lg sm:text-xl text-grey-600 max-w-3xl mx-auto leading-relaxed px-4">
+            Sign in to the right place for your role. All 53 services and 10 modules are available from your portal.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card variant="floating" hover className="p-8 group">
-            <div className="flex items-start gap-5">
-              <div className="w-14 h-14 rounded-xl bg-primary-50 group-hover:bg-primary-100 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                <Icon name="file-check" size={28} variant="primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-secondary-800 mb-3">
-                  Electronic Form I-9 & E-Verify
-                </h3>
-                <p className="text-grey-600 text-sm mb-4 leading-relaxed">
-                  Complete, update and retain your Form I-9s digitally.
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Digital Form I-9 completion</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>E-Verify integration</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Work authorization alerts</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-12">
+          <Card variant="floating" hover className="p-6 text-center cursor-pointer" onClick={() => router.push("/login")}>
+            <Building2 className="w-12 h-12 text-primary-600 mx-auto mb-3" />
+            <h3 className="font-semibold text-secondary-800 mb-1">Company Admin</h3>
+            <p className="text-sm text-grey-600 mb-4">Company, users, Contract Team, HR</p>
+            <Button variant="outline" size="sm">Open Portal</Button>
           </Card>
+          <Card variant="floating" hover className="p-6 text-center cursor-pointer" onClick={() => router.push("/login")}>
+            <UserCircle className="w-12 h-12 text-primary-600 mx-auto mb-3" />
+            <h3 className="font-semibold text-secondary-800 mb-1">Employee</h3>
+            <p className="text-sm text-grey-600 mb-4">Profile, leave, timesheets, docs</p>
+            <Button variant="outline" size="sm">Open Portal</Button>
+          </Card>
+          <Card variant="floating" hover className="p-6 text-center cursor-pointer" onClick={() => router.push("/login")}>
+            <PenTool className="w-12 h-12 text-primary-600 mx-auto mb-3" />
+            <h3 className="font-semibold text-secondary-800 mb-1">Contract Team</h3>
+            <p className="text-sm text-grey-600 mb-4">MSA, NDA, PO, WO, SOW – create & sign</p>
+            <Button variant="outline" size="sm">Open Portal</Button>
+          </Card>
+        </div>
 
-          <Card variant="floating" hover className="p-8 group">
-            <div className="flex items-start gap-5">
-              <div className="w-14 h-14 rounded-xl bg-primary-50 group-hover:bg-primary-100 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                <Icon name="plane" size={28} variant="primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-secondary-800 mb-3">
-                  Immigration Case Management
-                </h3>
-                <p className="text-grey-600 text-sm mb-4 leading-relaxed">
-                  File, track and manage your immigration cases under one platform.
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>H-1B petition management</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Case tracking and updates</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Form I-983 automation</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-
-          <Card variant="floating" hover className="p-8 group">
-            <div className="flex items-start gap-5">
-              <div className="w-14 h-14 rounded-xl bg-primary-50 group-hover:bg-primary-100 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                <Icon name="zap" size={28} variant="primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-secondary-800 mb-3">
-                  Public Access File Automation
-                </h3>
-                <p className="text-grey-600 text-sm mb-4 leading-relaxed">
-                  Auto-generate your Public Access File in seconds.
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Instant PAF generation</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Historical PAF management</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>LCA integration</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-
-          <Card variant="floating" hover className="p-8 group">
-            <div className="flex items-start gap-5">
-              <div className="w-14 h-14 rounded-xl bg-primary-50 group-hover:bg-primary-100 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                <Icon name="user-circle" size={28} variant="primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-secondary-800 mb-3">
-                  Employee Self Service
-                </h3>
-                <p className="text-grey-600 text-sm mb-4 leading-relaxed">
-                  Enable your employees to access and manage all their documents.
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Document access</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Mobile ESS application</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-grey-600 text-sm">
-                    <CheckCircle2 size={16} className="text-primary-600 mt-0.5 flex-shrink-0" />
-                    <span>Timesheet submission</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            variant="gradient"
+            size="lg"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push("/signup");
+            }}
+            className="min-w-[200px]"
+          >
+            Create Free Account
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push("/login");
+            }}
+            className="min-w-[200px]"
+          >
+            Sign In
+          </Button>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-6 lg:px-8 py-32 text-center bg-gradient-to-br from-primary-50 via-white to-accent-50 relative overflow-hidden">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 md:py-32 text-center bg-gradient-to-br from-primary-50 via-white to-accent-50 relative overflow-hidden">
+        {/* Decorative background - pointer-events-none */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-10 right-20 w-64 h-64 bg-primary-200/30 rounded-full blur-3xl animate-float"></div>
           <div className="absolute bottom-10 left-20 w-80 h-80 bg-accent-200/30 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }}></div>
-          <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-primary-100/20 rounded-full blur-3xl animate-pulse-slow" style={{ transform: 'translate(-50%, -50%)' }}></div>
         </div>
         
-        <div className={`max-w-4xl mx-auto relative z-10 scroll-reveal ${revealedElements.has('cta-section') ? 'revealed' : ''}`} data-reveal-id="cta-section">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 text-primary-700 text-sm font-medium mb-6 animate-pulse-slow">
-            <Rocket size={16} className="animate-float" />
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 text-primary-700 text-sm font-medium mb-6">
+            <Rocket size={16} />
             <span>Get Started Today</span>
           </div>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-secondary-800 mb-6">
-            Ready to Transform Your HR Operations?
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-secondary-800 mb-4 sm:mb-6 px-4">
+            Ready to Transform Your Business?
           </h2>
-          <p className="text-xl md:text-2xl text-grey-600 mb-12 leading-relaxed">
-            Choose your portal above and get started with XeroBookz today. Experience the power of enterprise-grade HR, Payroll, and Compliance management powered by AI.
+          <p className="text-lg sm:text-xl md:text-2xl text-grey-600 mb-8 sm:mb-12 leading-relaxed px-4">
+            Experience the power of a complete, integrated business management platform. Everything you need, all in one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {portals.map((portal) => {
-              const baseStyles = portal.color === "primary" 
-                ? { 
-                    backgroundColor: '#0EA5E9', 
-                    color: '#FFFFFF',
-                    boxShadow: '0 4px 14px 0 rgba(14, 165, 233, 0.5)',
-                  }
-                : portal.color === "secondary"
-                ? { 
-                    backgroundColor: '#525252', 
-                    color: '#FFFFFF',
-                    boxShadow: '0 4px 14px 0 rgba(82, 82, 82, 0.5)',
-                  }
-                : { 
-                    backgroundColor: '#22C55E', 
-                    color: '#FFFFFF',
-                    boxShadow: '0 4px 14px 0 rgba(34, 197, 94, 0.5)',
-                  };
-              
-              const hoverBg = portal.color === "primary" 
-                ? '#0284C7'
-                : portal.color === "secondary"
-                ? '#404040'
-                : '#16A34A';
-              
-              return (
-                <button
-                  key={portal.name}
-                  onClick={() => handlePortalClick(portal)}
-                  style={{
-                    ...baseStyles,
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '16px 32px',
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    minWidth: '200px',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = hoverBg;
-                    e.currentTarget.style.boxShadow = portal.color === "primary" 
-                      ? '0 6px 20px 0 rgba(14, 165, 233, 0.6)'
-                      : portal.color === "secondary"
-                      ? '0 6px 20px 0 rgba(82, 82, 82, 0.6)'
-                      : '0 6px 20px 0 rgba(34, 197, 94, 0.6)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = baseStyles.backgroundColor as string;
-                    e.currentTarget.style.boxShadow = baseStyles.boxShadow as string;
-                  }}
-                >
-                  {portal.name}
-                </button>
-              );
-            })}
+            <Button
+              variant="gradient"
+              size="lg"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push("/signup");
+              }}
+              className="min-w-[200px]"
+            >
+              Create Free Account
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push("/login");
+              }}
+              className="min-w-[200px]"
+            >
+              Sign In
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Minimal Footer */}
-      <footer className="bg-white border-t border-grey-200 py-16">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      {/* Footer */}
+      <footer className="bg-white border-t border-grey-200 py-8 sm:py-12 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
               <Link href="/">
@@ -1060,7 +955,8 @@ export default function Home() {
                 © 2025 XeroBookz. All rights reserved.
               </p>
             </div>
-            <div className="flex gap-6 text-sm text-grey-600">
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-grey-600">
+              <Link href="/about" className="hover:text-secondary-800 transition-colors">About Us</Link>
               <Link href="/privacy" className="hover:text-secondary-800 transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-secondary-800 transition-colors">Terms of Service</Link>
               <Link href="/contact" className="hover:text-secondary-800 transition-colors">Contact</Link>

@@ -5,34 +5,23 @@ import { useState } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
-}
-
-let browserQueryClient: QueryClient | undefined = undefined;
-
-function getQueryClient() {
-  if (typeof window === "undefined") {
-    // Server: always make a new query client
-    return makeQueryClient();
-  }
-  // Browser: use singleton pattern to keep the same query client
-  if (!browserQueryClient) {
-    browserQueryClient = makeQueryClient();
-  }
-  return browserQueryClient;
-}
-
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Only create QueryClient once on the client
-  const [queryClient] = useState(() => getQueryClient());
+  // Create QueryClient using useState - this ensures it's only created once per component instance
+  // and persists across re-renders
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // With SSR, we usually want to set some default staleTime
+            // to avoid refetching immediately on the client
+            staleTime: 60 * 1000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      })
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -42,4 +31,3 @@ export function Providers({ children }: { children: React.ReactNode }) {
     </QueryClientProvider>
   );
 }
-

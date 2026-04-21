@@ -16,7 +16,20 @@ Base = declarative_base()
 
 @contextmanager
 def get_db_session():
-    """Get database session context manager"""
+    """Get database session context manager (for use with 'with' statement)"""
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def get_db_session_dependency():
+    """FastAPI dependency that yields a DB session (use with Depends(get_db_session_dependency))"""
     session = SessionLocal()
     try:
         yield session

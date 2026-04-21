@@ -43,7 +43,7 @@ export const XeroBookzLogo: React.FC<XeroBookzLogoProps> = ({
     />
   );
 
-  const containerClasses = cn("flex items-center", className);
+  const containerClasses = cn("flex items-center justify-center w-full", className);
 
   if (href && !onClick) {
     return (

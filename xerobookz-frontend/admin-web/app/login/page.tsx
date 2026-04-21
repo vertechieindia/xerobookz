@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { authApi } from "@xerobookz/api-clients";
 import { Button, Input, Card, XeroBookzLogo } from "@xerobookz/ui-shared";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,19 +30,48 @@ export default function LoginPage() {
       });
 
       if (result.success && result.data) {
+        // Check if MFA is required
+        if (result.data.mfa_required) {
+          // Store temporary credentials for MFA verification
+          localStorage.setItem("xerobookz_temp_token", result.data.access_token);
+          localStorage.setItem("xerobookz_temp_email", email);
+          localStorage.setItem("xerobookz_temp_password", password);
+          localStorage.setItem("xerobookz_tenant_id", tenantId);
+          router.push("/auth/mfa");
+          return;
+        }
+
         localStorage.setItem("xerobookz_token", result.data.access_token);
         localStorage.setItem("xerobookz_refresh_token", result.data.refresh_token);
         localStorage.setItem("xerobookz_tenant_id", tenantId);
+        localStorage.setItem("xerobookz_user_role", result.data.user_role || "employee");
         setAuth({
           token: result.data.access_token,
           user: { email },
         });
-        router.push("/tenants");
+        
+        // Route based on role
+        const role = result.data.user_role || "employee";
+        if (role === "super_admin") {
+          router.push("/super-admin/dashboard");
+        } else if (role === "contract_manager") {
+          router.push("/contract-team/dashboard");
+        } else if (role === "admin" || role === "hrbp") {
+          router.push("/company-admin/dashboard");
+        } else {
+          router.push("/employee/dashboard");
+        }
       } else {
         setError(result.error?.details || "Login failed");
       }
-    } catch (err: any) {
-      setError(err.message || "Login failed");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Login failed";
+      const isNetwork = /network|fetch|failed|ECONNREFUSED/i.test(msg);
+      setError(
+        isNetwork
+          ? "Cannot reach server. Ensure the API is running (./start-api.sh) and try again."
+          : msg
+      );
     } finally {
       setIsLoading(false);
     }
@@ -59,9 +89,19 @@ export default function LoginPage() {
             ← Back to Home
           </Button>
         </div>
+        <div className="mb-4 text-center">
+          <p className="text-sm text-grey-600 mb-2">
+            New to XeroBookz?{" "}
+            <Link href="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+              Create an account
+            </Link>
+          </p>
+        </div>
         <Card variant="default" className="p-8">
           <div className="text-center mb-8">
-            <XeroBookzLogo size="xl" className="mb-6" />
+            <div className="flex justify-center mb-6">
+              <XeroBookzLogo size="xl" />
+            </div>
             <h1 className="text-2xl font-semibold text-secondary-800 mb-2">
               Admin Portal
             </h1>
@@ -88,10 +128,10 @@ export default function LoginPage() {
               icon={<Lock className="h-4 w-4 text-grey-400" />}
             />
             <Input
-              label="Tenant ID"
+              label="Tenant ID or Code"
               value={tenantId}
               onChange={(e) => setTenantId(e.target.value)}
-              placeholder="Enter tenant ID"
+              placeholder="e.g. XB000016272 or your tenant UUID"
               required
               icon={<Building className="h-4 w-4 text-grey-400" />}
             />
@@ -111,6 +151,15 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-grey-600">
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+                Sign up
+              </Link>
+            </p>
+          </div>
         </Card>
       </div>
     </div>

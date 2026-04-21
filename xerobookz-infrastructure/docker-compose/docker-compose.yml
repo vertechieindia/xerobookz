@@ -87,11 +87,11 @@ services:
     networks:
       - xerobookz-network
 
-  # Auth Service
+  # Auth Service (build from saas-backend so shared-libs is available)
   auth-service:
     build:
-      context: ../../saas-backend/auth-service
-      dockerfile: Dockerfile
+      context: ../../saas-backend
+      dockerfile: auth-service/Dockerfile
     container_name: xerobookz-auth-service
     environment:
       SERVICE_NAME: auth-service

@@ -2,20 +2,25 @@
 
 from sqlalchemy.orm import Session
 from uuid import UUID
+from datetime import datetime, timedelta
 import sys
 import os
+import secrets
+import bcrypt
+import httpx
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../shared-libs"))
 from shared_libs.models.enums import EventType
 from shared_libs.schemas.events import EventEnvelope
 
-from ..models.db_models import Employee
+from ..models.db_models import Employee, EmployeeInvitation
 from ..schemas.request import (
     EmployeeCreate, EmployeeUpdate,
     CompensationBandCreate, EmployeeCompensationCreate,
     EmployeeBenefitCreate, PerformanceReviewCreate,
     EmployeeSkillCreate, GlobalProfileCreate,
-    EmploymentHistoryCreate, JobArchitectureCreate
+    EmploymentHistoryCreate, JobArchitectureCreate,
+    EmployeeInvitationCreate, EmployeeInvitationAccept
 )
 from ..schemas.response import (
     EmployeeResponse,
@@ -337,3 +342,117 @@ class EmployeeService:
         """Get job architecture"""
         jobs = self.repo.get_job_architecture(tenant_id, job_family, job_level)
         return [JobArchitectureResponse.model_validate(j) for j in jobs]
+    
+    # ========== EMPLOYEE INVITATION METHODS ==========
+    
+    async def invite_employee(
+        self,
+        data: EmployeeInvitationCreate,
+        tenant_id: UUID,
+        invited_by: str
+    ) -> dict:
+        """Invite an employee"""
+        # Generate invitation token
+        token = secrets.token_urlsafe(32)
+        
+        # Create invitation (expires in 7 days)
+        invitation = EmployeeInvitation(
+            tenant_id=tenant_id,
+            email=data.email,
+            first_name=data.first_name,
+            last_name=data.last_name,
+            job_title=data.job_title,
+            department_id=data.department_id,
+            invitation_token=token,
+            invited_by=UUID(invited_by),
+            status="pending",
+            expires_at=datetime.utcnow() + timedelta(days=7)
+        )
+        
+        self.db.add(invitation)
+        self.db.commit()
+        self.db.refresh(invitation)
+        
+        # TODO: Send invitation email with token
+        # For now, return the invitation details
+        
+        return {
+            "invitation_id": str(invitation.id),
+            "email": invitation.email,
+            "token": token,  # In production, send via email only
+            "expires_at": invitation.expires_at.isoformat()
+        }
+    
+    async def accept_invitation(
+        self,
+        token: str,
+        password: str,
+        first_name: str,
+        last_name: str
+    ) -> dict:
+        """Accept employee invitation"""
+        # Find invitation
+        invitation = self.db.query(EmployeeInvitation).filter(
+            EmployeeInvitation.invitation_token == token,
+            EmployeeInvitation.status == "pending"
+        ).first()
+        
+        if not invitation:
+            raise ValueError("Invalid or expired invitation")
+        
+        if invitation.expires_at < datetime.utcnow():
+            invitation.status = "expired"
+            self.db.commit()
+            raise ValueError("Invitation has expired")
+        
+        # Create user account via auth-service
+        async with httpx.AsyncClient() as client:
+            user_response = await client.post(
+                "http://auth-service:8001/api/v1/auth/users",
+                json={
+                    "email": invitation.email,
+                    "password": password,
+                    "tenant_id": str(invitation.tenant_id)
+                }
+            )
+            
+            if user_response.status_code != 200:
+                raise ValueError("Failed to create user account")
+            
+            user_data = user_response.json()
+            user_id = user_data.get("data", {}).get("id")
+        
+        # Create employee record
+        employee = Employee(
+            tenant_id=invitation.tenant_id,
+            employee_number=f"EMP-{secrets.token_hex(4).upper()}",
+            first_name=first_name,
+            last_name=last_name,
+            email=invitation.email,
+            job_title=invitation.job_title,
+            department_id=invitation.department_id,
+            status="active"
+        )
+        
+        self.db.add(employee)
+        
+        # Mark invitation as accepted
+        invitation.status = "accepted"
+        invitation.accepted_at = datetime.utcnow()
+        
+        self.db.commit()
+        self.db.refresh(employee)
+        
+        # Publish event
+        event = EventEnvelope(
+            event_type=EventType.EMPLOYEE_CREATED,
+            tenant_id=invitation.tenant_id,
+            payload={"employee_id": str(employee.id), "employee_number": employee.employee_number}
+        )
+        await self.event_producer.publish(event)
+        
+        return {
+            "employee_id": str(employee.id),
+            "email": employee.email,
+            "status": "accepted"
+        }
